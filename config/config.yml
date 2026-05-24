@@ -2,7 +2,8 @@
 # MQTT points at an external broker (typically provided by Home Assistant stack).
 mqtt:
   host: "{FRIGATE_MQTT_HOST}"
-  port: "{FRIGATE_MQTT_PORT}"
+  # Port must resolve to an integer.
+  port: 1883
   user: "{FRIGATE_MQTT_USER}"
   password: "{FRIGATE_MQTT_PASSWORD}"
   topic_prefix: "{FRIGATE_MQTT_TOPIC_PREFIX}"
@@ -27,21 +28,20 @@ record:
 snapshots:
   enabled: true
 
-# Cameras are intentionally disabled by default.
-# Remove leading '#' and adjust values to enable.
-# cameras:
-#   front_door:
-#     enabled: false
-#     ffmpeg:
-#       inputs:
-#         - path: rtsp://{CAMERA1_USER}:{CAMERA1_PASSWORD}@{CAMERA1_HOST}{CAMERA1_PATH}
-#           roles:
-#             - detect
-#             - record
-#     detect:
-#       width: 1280
-#       height: 720
-#       fps: 5
+# Frigate requires a cameras section; starter camera is disabled by default.
+cameras:
+  front_door:
+    enabled: false
+    ffmpeg:
+      inputs:
+        - path: rtsp://{CAMERA1_USER}:{CAMERA1_PASSWORD}@{CAMERA1_HOST}{CAMERA1_PATH}
+          roles:
+            - detect
+            - record
+    detect:
+      width: 1280
+      height: 720
+      fps: 5
 
 # Minimal birdseye view scaffold.
 birdseye:

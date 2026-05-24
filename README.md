@@ -68,7 +68,8 @@ Important: Frigate config environment substitution expects variables beginning w
 
 3. Update `config/config.yml`:
 - Set MQTT broker credentials to match the existing external Home Assistant MQTT broker.
-- Uncomment and configure the example camera block when ready.
+- Set `mqtt.port` if your broker is not on `1883`.
+- Configure the example `front_door` camera block and set `enabled: true` when ready.
 
 4. Start Frigate:
 
