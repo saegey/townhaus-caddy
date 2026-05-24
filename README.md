@@ -69,7 +69,7 @@ Important: Frigate config environment substitution expects variables beginning w
 3. Update `config/config.yml`:
 - Set MQTT broker credentials to match the existing external Home Assistant MQTT broker.
 - Set `mqtt.port` if your broker is not on `1883`.
-- Configure the example `front_door` camera block and set `enabled: true` when ready.
+- Replace the placeholder RTSP URL in `cameras.front_door.ffmpeg.inputs[0].path`, then set `enabled: true` when ready.
 
 4. Start Frigate:
 

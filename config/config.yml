@@ -34,7 +34,8 @@ cameras:
     enabled: false
     ffmpeg:
       inputs:
-        - path: rtsp://{CAMERA1_USER}:{CAMERA1_PASSWORD}@{CAMERA1_HOST}{CAMERA1_PATH}
+        # Static placeholder avoids env-substitution failures before camera setup.
+        - path: rtsp://user:pass@127.0.0.1:554/stream
           roles:
             - detect
             - record
