@@ -1,0 +1,37 @@
+version: "3.9"
+
+services:
+  frigate:
+    # Stable Frigate image for production usage.
+    image: ghcr.io/blakeblackshear/frigate:stable
+    container_name: frigate
+    restart: unless-stopped
+
+    # Load deployment-specific values from .env (MQTT, TZ, UID/GID, etc).
+    env_file:
+      - .env
+
+    ports:
+      - "5000:5000"          # Frigate Web UI / API
+      - "8554:8554"          # RTSP restream (TCP)
+      - "8555:8555/tcp"      # WebRTC / go2rtc (TCP)
+      - "8555:8555/udp"      # WebRTC / go2rtc (UDP)
+
+    # Device pass-through for Intel VAAPI decode/encode.
+    devices:
+      - /dev/dri/renderD128:/dev/dri/renderD128
+
+    # Use host localtime for aligned timestamps in logs/events.
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./config:/config
+      - ./storage:/media/frigate
+
+    # tmpfs cache avoids unnecessary disk writes for ephemeral cache data.
+    tmpfs:
+      - /tmp/cache:size=1g,mode=1777
+
+    # Optional hardening and predictable shutdown behavior.
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 30s

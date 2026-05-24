@@ -1,0 +1,48 @@
+# Frigate core settings.
+# MQTT points at an external broker (typically provided by Home Assistant stack).
+mqtt:
+  host: "{MQTT_HOST}"
+  port: "{MQTT_PORT}"
+  user: "{MQTT_USER}"
+  password: "{MQTT_PASSWORD}"
+  topic_prefix: "{MQTT_TOPIC_PREFIX}"
+
+# Object detection can run on CPU initially; tune later if using EdgeTPU/GPU detectors.
+detectors:
+  cpu1:
+    type: cpu
+
+# Intel VAAPI acceleration settings for ffmpeg.
+# Frigate will use /dev/dri/renderD128 passed from docker-compose.
+ffmpeg:
+  hwaccel_args: preset-vaapi
+
+# Recordings path is backed by ./storage bind mount.
+record:
+  enabled: true
+  retain:
+    days: 7
+    mode: motion
+
+snapshots:
+  enabled: true
+
+# Cameras are intentionally disabled by default.
+# Remove leading '#' and adjust values to enable.
+# cameras:
+#   front_door:
+#     enabled: false
+#     ffmpeg:
+#       inputs:
+#         - path: rtsp://{CAMERA1_USER}:{CAMERA1_PASSWORD}@{CAMERA1_HOST}{CAMERA1_PATH}
+#           roles:
+#             - detect
+#             - record
+#     detect:
+#       width: 1280
+#       height: 720
+#       fps: 5
+
+# Minimal birdseye view scaffold.
+birdseye:
+  enabled: true
