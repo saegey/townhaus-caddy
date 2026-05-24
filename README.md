@@ -107,3 +107,4 @@ For resilient home-lab production behavior:
 - Uses bind mounts for transparent host-level backup and migration.
 - Uses read-only `/etc/localtime` mount for timestamp consistency.
 - Uses `tmpfs` cache mount to reduce disk churn for ephemeral cache data.
+- Sets `shm_size: 256mb` to satisfy Frigate shared-memory requirements.
