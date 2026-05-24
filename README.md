@@ -64,6 +64,8 @@ vainfo
 cp .env.example .env
 ```
 
+Important: Frigate config environment substitution expects variables beginning with `FRIGATE_` (for example `FRIGATE_MQTT_HOST`).
+
 3. Update `config/config.yml`:
 - Set MQTT broker credentials to match the existing external Home Assistant MQTT broker.
 - Uncomment and configure the example camera block when ready.

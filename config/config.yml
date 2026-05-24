@@ -1,11 +1,11 @@
 # Frigate core settings.
 # MQTT points at an external broker (typically provided by Home Assistant stack).
 mqtt:
-  host: "{MQTT_HOST}"
-  port: "{MQTT_PORT}"
-  user: "{MQTT_USER}"
-  password: "{MQTT_PASSWORD}"
-  topic_prefix: "{MQTT_TOPIC_PREFIX}"
+  host: "{FRIGATE_MQTT_HOST}"
+  port: "{FRIGATE_MQTT_PORT}"
+  user: "{FRIGATE_MQTT_USER}"
+  password: "{FRIGATE_MQTT_PASSWORD}"
+  topic_prefix: "{FRIGATE_MQTT_TOPIC_PREFIX}"
 
 # Object detection can run on CPU initially; tune later if using EdgeTPU/GPU detectors.
 detectors:
