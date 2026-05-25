@@ -6,6 +6,7 @@ services:
     image: ghcr.io/blakeblackshear/frigate:stable
     container_name: frigate
     restart: unless-stopped
+    shm_size: "256mb"
 
     # Load deployment-specific values from .env (MQTT, TZ, UID/GID, etc).
     env_file:

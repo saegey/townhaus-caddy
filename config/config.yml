@@ -1,12 +1,12 @@
 # Frigate core settings.
 # MQTT points at an external broker (typically provided by Home Assistant stack).
 mqtt:
-  host: "{FRIGATE_MQTT_HOST}"
+  host: '{FRIGATE_MQTT_HOST}'
   # Port must resolve to an integer.
   port: 1883
-  user: "{FRIGATE_MQTT_USER}"
-  password: "{FRIGATE_MQTT_PASSWORD}"
-  topic_prefix: "{FRIGATE_MQTT_TOPIC_PREFIX}"
+  user: '{FRIGATE_MQTT_USER}'
+  password: '{FRIGATE_MQTT_PASSWORD}'
+  topic_prefix: '{FRIGATE_MQTT_TOPIC_PREFIX}'
 
 # Object detection can run on CPU initially; tune later if using EdgeTPU/GPU detectors.
 detectors:
@@ -21,29 +21,72 @@ ffmpeg:
 # Recordings path is backed by ./storage bind mount.
 record:
   enabled: true
-  retain:
+  continuous:
+    days: 1
+  motion:
     days: 7
-    mode: motion
 
 snapshots:
   enabled: true
+  bounding_box: true
+  crop: true
+  retain:
+    default: 7
+
+audio:
+  enabled: true
+  listen:
+    - bark
+    - scream
+    - speech
+    - yell
 
 # Frigate requires a cameras section; starter camera is disabled by default.
 cameras:
-  front_door:
-    enabled: false
+  front_doorbell:
+    enabled: true
     ffmpeg:
       inputs:
-        # Static placeholder avoids env-substitution failures before camera setup.
-        - path: rtsp://user:pass@127.0.0.1:554/stream
+        - path: rtsp://127.0.0.1:8554/front_doorbell
+          input_args: preset-rtsp-restream
           roles:
             - detect
             - record
+            - audio
     detect:
-      width: 1280
+      width: 960
       height: 720
       fps: 5
-
-# Minimal birdseye view scaffold.
+    live:
+      streams:
+        Stream 1: front_doorbell
+    semantic_search:
+      triggers:
+        person_seen:
+          enabled: true
+          type: description
+          data: When a person is identified
+          threshold: 0.5
+          actions: []
+          friendly_name: Person seen
 birdseye:
   enabled: true
+  mode: objects
+version: 0.17-0
+go2rtc:
+  streams:
+    front_doorbell:
+      - rtsp://admin:{DOORBELL_PASSWORD}@192.168.2.137:554/Preview_01_main
+
+
+semantic_search:
+  enabled: true
+  model_size: small
+face_recognition:
+  enabled: false
+  model_size: small
+lpr:
+  enabled: false
+classification:
+  bird:
+    enabled: false
