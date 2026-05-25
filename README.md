@@ -24,6 +24,9 @@ Recommended dedicated internal hostnames:
 - `https://frigate` -> `http://beelink.tail0bdbb0.ts.net:5000`
 - `https://groovenet` -> `http://beelink.tail0bdbb0.ts.net:3000`
 - `https://ha` -> `http://homeassistant.tail0bdbb0.ts.net:8123`
+- `https://frigate.tail0bdbb0.ts.net` -> `http://beelink.tail0bdbb0.ts.net:5000`
+- `https://groovenet.tail0bdbb0.ts.net` -> `http://beelink.tail0bdbb0.ts.net:3000`
+- `https://ha.tail0bdbb0.ts.net` -> `http://homeassistant.tail0bdbb0.ts.net:8123`
 
 Optional alternate endpoints (included in `Caddyfile`):
 - `https://beelink/frigate`
@@ -31,6 +34,7 @@ Optional alternate endpoints (included in `Caddyfile`):
 - `https://homeassistant`
 
 Dedicated hostnames are preferred over nested paths because apps like Frigate and Home Assistant often behave better at site root.
+Use FQDNs on iOS for reliable resolution; short names are fine on desktop if your local DNS/hosts supports them.
 
 ## Why this works with Tailscale MagicDNS
 
