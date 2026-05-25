@@ -70,7 +70,9 @@ adguard, adguard.home.arpa {
 unifi, unifi.home.arpa {
 	import common
 	reverse_proxy https://homeassistant.tail0bdbb0.ts.net:8443 {
+		header_up Host homeassistant.local
 		transport http {
+			tls_server_name homeassistant.local
 			tls_insecure_skip_verify
 		}
 	}
