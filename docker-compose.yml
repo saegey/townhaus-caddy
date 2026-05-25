@@ -31,8 +31,6 @@ services:
     # tmpfs cache avoids unnecessary disk writes for ephemeral cache data.
     tmpfs:
       - /tmp/cache:size=1g,mode=1777
-    # Frigate requires larger /dev/shm for ffmpeg/frame processing stability.
-    shm_size: "256mb"
 
     # Optional hardening and predictable shutdown behavior.
     security_opt:
