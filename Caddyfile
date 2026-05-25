@@ -31,31 +31,27 @@
 
 # Frigate: dual endpoints for desktop/iOS compatibility:
 # - https://frigate
-# - https://frigate.tail0bdbb0.ts.net
-frigate, frigate.tail0bdbb0.ts.net {
+# - https://frigate.home.arpa
+frigate, frigate.home.arpa {
 	import common
 	reverse_proxy http://beelink.tail0bdbb0.ts.net:5000
 }
 
 # Groovenet: dual endpoints for desktop/iOS compatibility:
 # - https://groovenet
-# - https://groovenet.tail0bdbb0.ts.net
-groovenet, groovenet.tail0bdbb0.ts.net {
+# - https://groovenet.home.arpa
+groovenet, groovenet.home.arpa {
 	import common
 	reverse_proxy http://beelink.tail0bdbb0.ts.net:3000
 }
 
 # Home Assistant: dual endpoints for desktop/iOS compatibility:
 # - https://ha
-# - https://ha.tail0bdbb0.ts.net
+# - https://ha.home.arpa
 # Home Assistant needs correct forwarded headers and trusted_proxies.
-ha, ha.tail0bdbb0.ts.net {
+ha, ha.home.arpa {
 	import common
-	reverse_proxy http://homeassistant.tail0bdbb0.ts.net:8123 {
-		header_up X-Forwarded-Proto {scheme}
-		header_up X-Forwarded-For {remote_host}
-		header_up X-Forwarded-Host {host}
-	}
+	reverse_proxy http://homeassistant.tail0bdbb0.ts.net:8123
 }
 
 # Optional alternate layout (not recommended for Frigate/HA path handling):
@@ -75,9 +71,5 @@ beelink {
 # https://homeassistant
 homeassistant {
 	import common
-	reverse_proxy http://homeassistant.tail0bdbb0.ts.net:8123 {
-		header_up X-Forwarded-Proto {scheme}
-		header_up X-Forwarded-For {remote_host}
-		header_up X-Forwarded-Host {host}
-	}
+	reverse_proxy http://homeassistant.tail0bdbb0.ts.net:8123
 }

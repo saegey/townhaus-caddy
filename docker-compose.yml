@@ -24,6 +24,27 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  adguardhome:
+    image: adguard/adguardhome:latest
+    container_name: adguardhome
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${ADGUARD_DNS_PORT:-53}:53/tcp"
+      - "${ADGUARD_DNS_PORT:-53}:53/udp"
+      - "${ADGUARD_ADMIN_PORT:-3001}:3000/tcp"
+    volumes:
+      - adguard_work:/opt/adguardhome/work
+      - adguard_conf:/opt/adguardhome/conf
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 volumes:
   caddy_data:
   caddy_config:
+  adguard_work:
+  adguard_conf:

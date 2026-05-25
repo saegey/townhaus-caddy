@@ -15,6 +15,7 @@ This setup is designed to run from:
 ├── docker-compose.yml
 ├── Caddyfile
 ├── .env
+├── certs/
 └── README.md
 ```
 
@@ -24,9 +25,9 @@ Recommended dedicated internal hostnames:
 - `https://frigate` -> `http://beelink.tail0bdbb0.ts.net:5000`
 - `https://groovenet` -> `http://beelink.tail0bdbb0.ts.net:3000`
 - `https://ha` -> `http://homeassistant.tail0bdbb0.ts.net:8123`
-- `https://frigate.tail0bdbb0.ts.net` -> `http://beelink.tail0bdbb0.ts.net:5000`
-- `https://groovenet.tail0bdbb0.ts.net` -> `http://beelink.tail0bdbb0.ts.net:3000`
-- `https://ha.tail0bdbb0.ts.net` -> `http://homeassistant.tail0bdbb0.ts.net:8123`
+- `https://frigate.home.arpa` -> `http://beelink.tail0bdbb0.ts.net:5000`
+- `https://groovenet.home.arpa` -> `http://beelink.tail0bdbb0.ts.net:3000`
+- `https://ha.home.arpa` -> `http://homeassistant.tail0bdbb0.ts.net:8123`
 
 Optional alternate endpoints (included in `Caddyfile`):
 - `https://beelink/frigate`
@@ -34,7 +35,7 @@ Optional alternate endpoints (included in `Caddyfile`):
 - `https://homeassistant`
 
 Dedicated hostnames are preferred over nested paths because apps like Frigate and Home Assistant often behave better at site root.
-Use FQDNs on iOS for reliable resolution; short names are fine on desktop if your local DNS/hosts supports them.
+Use `home.arpa` FQDNs on iOS for reliable resolution; short names are fine on desktop if your local DNS/hosts supports them.
 
 ## Why this works with Tailscale MagicDNS
 
@@ -64,7 +65,22 @@ docker compose up -d
 ```bash
 docker compose ps
 docker compose logs -f caddy
+docker compose logs -f adguardhome
 ```
+
+4. First-time AdGuard setup:
+
+- Open `http://<caddy-host-tailscale-ip>:3001`
+- Complete setup wizard
+- Keep AdGuard DNS listening on port `53`
+- Point your Tailscale DNS or client DNS to your Caddy host Tailscale IP
+- Add DNS rewrites in AdGuard:
+  - `frigate` -> `<caddy-host-tailscale-ip>`
+  - `groovenet` -> `<caddy-host-tailscale-ip>`
+  - `ha` -> `<caddy-host-tailscale-ip>`
+  - `frigate.home.arpa` -> `<caddy-host-tailscale-ip>`
+  - `groovenet.home.arpa` -> `<caddy-host-tailscale-ip>`
+  - `ha.home.arpa` -> `<caddy-host-tailscale-ip>`
 
 ## Reload config (no downtime)
 
@@ -80,13 +96,24 @@ Follow logs:
 
 ```bash
 docker compose logs -f caddy
+docker compose logs -f adguardhome
 ```
 
 Recent logs:
 
 ```bash
 docker compose logs --tail=200 caddy
+docker compose logs --tail=200 adguardhome
 ```
+
+## Caddy + AdGuard in one stack vs separate stacks
+
+Running together in one Compose project is fine for homelab and easier to operate:
+- One `.env`
+- One `docker compose up -d`
+- One place for backups
+
+Separate stacks are better only if you want independent lifecycle/isolation (for example DNS restarts independent from proxy changes).
 
 ## Internal TLS model (`tls internal`)
 
