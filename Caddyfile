@@ -69,7 +69,7 @@ adguard, adguard.home.arpa {
 # Upstream uses HTTPS on 8443 and commonly presents a self-signed cert.
 unifi, unifi.home.arpa {
 	import common
-	reverse_proxy https://ha.home.arpa:8443 {
+	reverse_proxy https://homeassistant.tail0bdbb0.ts.net:8443 {
 		transport http {
 			tls_insecure_skip_verify
 		}
