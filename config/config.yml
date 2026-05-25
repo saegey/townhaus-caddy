@@ -76,7 +76,7 @@ version: 0.17-0
 go2rtc:
   streams:
     front_doorbell:
-      - rtsp://admin:{DOORBELL_PASSWORD}@192.168.2.137:554/Preview_01_main
+      - rtsp://admin:${DOORBELL_PASSWORD}@192.168.2.137:554/Preview_01_main
 
 
 semantic_search:
