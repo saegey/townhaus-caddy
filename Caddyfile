@@ -54,6 +54,28 @@ ha, ha.home.arpa {
 	reverse_proxy http://homeassistant.tail0bdbb0.ts.net:8123
 }
 
+# AdGuard Home admin UI:
+# - https://adguard
+# - https://adguard.home.arpa
+# Proxied directly to the AdGuard container on the Compose network.
+adguard, adguard.home.arpa {
+	import common
+	reverse_proxy http://adguardhome:80
+}
+
+# UniFi appliance UI:
+# - https://unifi
+# - https://unifi.home.arpa
+# Upstream uses HTTPS on 8443 and commonly presents a self-signed cert.
+unifi, unifi.home.arpa {
+	import common
+	reverse_proxy https://ha.home.arpa:8443 {
+		transport http {
+			tls_insecure_skip_verify
+		}
+	}
+}
+
 # Optional alternate layout (not recommended for Frigate/HA path handling):
 # https://beelink/frigate and https://beelink/groovenet
 beelink {
