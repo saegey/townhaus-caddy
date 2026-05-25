@@ -15,6 +15,7 @@ services:
     
     environment:
       DOORBELL_PASSWORD: ${DOORBELL_PASSWORD}
+      FRIGATE_MQTT_TOPIC_PREFIX: ${FRIGATE_MQTT_TOPIC_PREFIX}
 
     ports:
       - "5000:5000"          # Frigate Web UI / API
@@ -40,3 +41,17 @@ services:
     security_opt:
       - no-new-privileges:true
     stop_grace_period: 30s
+
+  scrypted:
+    # Scrypted complements Frigate for ecosystem integrations/notifications.
+    image: ghcr.io/koush/scrypted:latest
+    container_name: scrypted
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      TZ: ${TZ}
+    # Host networking is recommended for camera discovery and integrations.
+    network_mode: host
+    volumes:
+      - ./scrypted:/server/volume
