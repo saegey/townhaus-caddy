@@ -82,6 +82,10 @@ docker compose logs -f adguardhome
   - `groovenet.home.arpa` -> `<caddy-host-tailscale-ip>`
   - `ha.home.arpa` -> `<caddy-host-tailscale-ip>`
 
+After setup, AdGuard may move its main web UI to container port `80`.
+In this Compose setup that is published as:
+- `http://<caddy-host-tailscale-ip>:3080`
+
 ## Reload config (no downtime)
 
 After editing `Caddyfile`:

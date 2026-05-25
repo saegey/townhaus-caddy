@@ -34,6 +34,7 @@ services:
       - "${ADGUARD_DNS_PORT:-53}:53/tcp"
       - "${ADGUARD_DNS_PORT:-53}:53/udp"
       - "${ADGUARD_ADMIN_PORT:-3001}:3000/tcp"
+      - "${ADGUARD_WEB_PORT:-3080}:80/tcp"
     volumes:
       - adguard_work:/opt/adguardhome/work
       - adguard_conf:/opt/adguardhome/conf
