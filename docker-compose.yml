@@ -11,6 +11,9 @@ services:
     # Load deployment-specific values from .env (MQTT, TZ, UID/GID, etc).
     env_file:
       - .env
+    
+    environment:
+      DOORBELL_PASSWORD: ${DOORBELL_PASSWORD}
 
     ports:
       - "5000:5000"          # Frigate Web UI / API
