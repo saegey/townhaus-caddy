@@ -1,0 +1,77 @@
+{
+	# Global options for an internal homelab deployment.
+	# Admin API is enabled for zero-downtime reloads via `caddy reload`.
+	admin 0.0.0.0:2019
+
+	# Log to stdout/stderr so Docker can manage logs.
+	log {
+		output stdout
+		format console
+		level INFO
+	}
+}
+
+# Shared defaults for all internal services.
+(common) {
+	# Caddy's internal CA issues certs for these hostnames.
+	tls internal
+
+	# Compression for text responses.
+	encode zstd gzip
+
+	# Basic security headers suitable for internal apps.
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+}
+
+# Frigate: internal endpoint https://frigate -> upstream on beelink:5000
+frigate {
+	import common
+	reverse_proxy http://beelink.tail0bdbb0.ts.net:5000
+}
+
+# Groovenet: internal endpoint https://groovenet -> upstream on beelink:3000
+groovenet {
+	import common
+	reverse_proxy http://beelink.tail0bdbb0.ts.net:3000
+}
+
+# Home Assistant: internal endpoint https://ha -> upstream on homeassistant:8123
+# Home Assistant needs correct forwarded headers and trusted_proxies.
+ha {
+	import common
+	reverse_proxy http://homeassistant.tail0bdbb0.ts.net:8123 {
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Host {host}
+	}
+}
+
+# Optional alternate layout (not recommended for Frigate/HA path handling):
+# https://beelink/frigate and https://beelink/groovenet
+beelink {
+	import common
+	handle_path /frigate/* {
+		reverse_proxy http://beelink.tail0bdbb0.ts.net:5000
+	}
+	handle_path /groovenet/* {
+		reverse_proxy http://beelink.tail0bdbb0.ts.net:3000
+	}
+	respond 404
+}
+
+# Optional alternate single-host Home Assistant endpoint:
+# https://homeassistant
+homeassistant {
+	import common
+	reverse_proxy http://homeassistant.tail0bdbb0.ts.net:8123 {
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Host {host}
+	}
+}
