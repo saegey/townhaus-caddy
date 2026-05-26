@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   frigate:
     # Stable Frigate image for production usage.
@@ -13,15 +11,8 @@ services:
     env_file:
       - .env
     
-    environment:
-      DOORBELL_PASSWORD: ${DOORBELL_PASSWORD}
-      FRIGATE_MQTT_TOPIC_PREFIX: ${FRIGATE_MQTT_TOPIC_PREFIX}
-
-    ports:
-      - "5000:5000"          # Frigate Web UI / API
-      - "8554:8554"          # RTSP restream (TCP)
-      - "8555:8555/tcp"      # WebRTC / go2rtc (TCP)
-      - "8555:8555/udp"      # WebRTC / go2rtc (UDP)
+    # HomeKit via go2rtc relies on local discovery; host mode is the simplest path.
+    network_mode: host
 
     # Device pass-through for Intel VAAPI decode/encode.
     devices:
@@ -41,18 +32,3 @@ services:
     security_opt:
       - no-new-privileges:true
     stop_grace_period: 30s
-
-  scrypted:
-    # Scrypted complements Frigate for ecosystem integrations/notifications.
-    image: ghcr.io/koush/scrypted:latest
-    container_name: scrypted
-    restart: unless-stopped
-    env_file:
-      - .env
-    environment:
-      TZ: ${TZ}
-    # Host networking is recommended for camera discovery and integrations.
-    network_mode: host
-    volumes:
-      - ./scrypted:/server/volume
-      - ./storage/scrypted-recordings:/test

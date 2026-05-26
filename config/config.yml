@@ -1,12 +1,12 @@
 # Frigate core settings.
 # MQTT points at an external broker (typically provided by Home Assistant stack).
 mqtt:
-  host: '{FRIGATE_MQTT_HOST}'
+  host: '${FRIGATE_MQTT_HOST}'
   # Port must resolve to an integer.
-  port: 1883
-  user: '{FRIGATE_MQTT_USER}'
-  password: '{FRIGATE_MQTT_PASSWORD}'
-  topic_prefix: '{FRIGATE_MQTT_TOPIC_PREFIX}'
+  port: ${FRIGATE_MQTT_PORT}
+  user: '${FRIGATE_MQTT_USER}'
+  password: '${FRIGATE_MQTT_PASSWORD}'
+  topic_prefix: '${FRIGATE_MQTT_TOPIC_PREFIX}'
 
 # Object detection can run on CPU initially; tune later if using EdgeTPU/GPU detectors.
 detectors:
@@ -76,7 +76,12 @@ version: 0.17-0
 go2rtc:
   streams:
     front_doorbell:
-      - rtsp://admin:{DOORBELL_PASSWORD}@192.168.2.137:554/Preview_01_main
+      - rtsp://admin:${DOORBELL_PASSWORD}@192.168.2.137:554/Preview_01_main
+      - ffmpeg:front_doorbell#video=h264
+      - ffmpeg:front_doorbell#audio=opus
+  homekit:
+    front_doorbell:
+      pin: '${FRIGATE_HOMEKIT_PIN}'
 
 
 semantic_search:

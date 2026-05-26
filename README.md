@@ -1,7 +1,6 @@
 # frigate-infra
 
 Infrastructure-oriented Docker Compose deployment for Frigate on Debian 12 with Intel VAAPI support.
-Includes optional Scrypted service for camera UX/integration experiments.
 
 ## Repository Layout
 
@@ -9,7 +8,6 @@ Includes optional Scrypted service for camera UX/integration experiments.
 - `.env.example`: environment variable template
 - `config/config.yml`: starter Frigate configuration
 - `storage/`: bind-mounted media storage (recordings, clips, snapshots)
-- `scrypted/`: bind-mounted Scrypted state/config/plugins
 - `scripts/`: helper operational scripts
 
 ## Prerequisites (Debian 12)
@@ -72,6 +70,7 @@ Important: Frigate config environment substitution expects variables beginning w
 - Set MQTT broker credentials to match the existing external Home Assistant MQTT broker.
 - Set `mqtt.port` if your broker is not on `1883`.
 - Replace the placeholder RTSP URL in `cameras.front_door.ffmpeg.inputs[0].path`, then set `enabled: true` when ready.
+- Set `go2rtc.homekit.<camera>.pin` (or `FRIGATE_HOMEKIT_PIN` in `.env`) for Apple Home pairing.
 
 4. Start Frigate:
 
@@ -82,8 +81,8 @@ Important: Frigate config environment substitution expects variables beginning w
 5. Open Frigate UI:
 - `http://<host-ip>:5000`
 
-6. (Optional) Use Scrypted UI:
-- `https://<host-ip>:10443` (or `http://<host-ip>:11080` on first boot)
+6. Open go2rtc UI for HomeKit pairing:
+- `http://<host-ip>:1984`
 
 ## Operations
 
@@ -92,42 +91,10 @@ Important: Frigate config environment substitution expects variables beginning w
 - Logs: `./scripts/logs.sh`
 - Update to latest stable image: `./scripts/update.sh`
 
-## Scrypted Notes
+## HomeKit Notes
 
-- Compose includes `scrypted` with `network_mode: host` for best camera discovery compatibility.
-- Persistent Scrypted data is stored under `./scrypted`.
-- First start can take a minute while plugins initialize.
-
-Start only Scrypted:
-
-```bash
-docker compose up -d scrypted
-```
-
-Follow Scrypted logs:
-
-```bash
-docker compose logs -f scrypted
-```
-
-### Recommended Caddy entry (from your proxy stack)
-
-Add this in your Caddy stack if you want internal HTTPS aliasing:
-
-```caddyfile
-scrypted, scrypted.home.arpa {
-	import common
-	reverse_proxy https://beelink.tail0bdbb0.ts.net:10443 {
-		transport http {
-			tls_insecure_skip_verify
-		}
-	}
-}
-```
-
-Then add AdGuard rewrites:
-- `scrypted` -> `<beelink-tailscale-ip>`
-- `scrypted.home.arpa` -> `<beelink-tailscale-ip>`
+- Frigate is configured with `network_mode: host`, which is the recommended path for go2rtc HomeKit discovery and pairing.
+- Pair cameras from go2rtc UI (`http://<host-ip>:1984`) and add them in Apple Home using the PIN in your config.
 
 ## Notes on Hardware Acceleration
 
