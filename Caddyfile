@@ -86,7 +86,7 @@ unifi, unifi.home.arpa {
 # Upstream uses HTTPS on 10443 and may present a self-signed cert.
 scrypted, scrypted.home.arpa {
 	import common
-	reverse_proxy https://beelink.tail0bdbb0.ts.net:10443 {
+	reverse_proxy https://host.docker.internal:10443 {
 		transport http {
 			tls_insecure_skip_verify
 		}
