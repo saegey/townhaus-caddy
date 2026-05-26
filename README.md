@@ -25,9 +25,11 @@ Recommended dedicated internal hostnames:
 - `https://frigate` -> `http://beelink.tail0bdbb0.ts.net:5000`
 - `https://groovenet` -> `http://beelink.tail0bdbb0.ts.net:3000`
 - `https://ha` -> `http://homeassistant.tail0bdbb0.ts.net:8123`
+- `https://scrypted` -> `https://beelink.tail0bdbb0.ts.net:10443`
 - `https://frigate.home.arpa` -> `http://beelink.tail0bdbb0.ts.net:5000`
 - `https://groovenet.home.arpa` -> `http://beelink.tail0bdbb0.ts.net:3000`
 - `https://ha.home.arpa` -> `http://homeassistant.tail0bdbb0.ts.net:8123`
+- `https://scrypted.home.arpa` -> `https://beelink.tail0bdbb0.ts.net:10443`
 
 Optional alternate endpoints (included in `Caddyfile`):
 - `https://beelink/frigate`
@@ -78,9 +80,11 @@ docker compose logs -f adguardhome
   - `frigate` -> `<caddy-host-tailscale-ip>`
   - `groovenet` -> `<caddy-host-tailscale-ip>`
   - `ha` -> `<caddy-host-tailscale-ip>`
+  - `scrypted` -> `<caddy-host-tailscale-ip>`
   - `frigate.home.arpa` -> `<caddy-host-tailscale-ip>`
   - `groovenet.home.arpa` -> `<caddy-host-tailscale-ip>`
   - `ha.home.arpa` -> `<caddy-host-tailscale-ip>`
+  - `scrypted.home.arpa` -> `<caddy-host-tailscale-ip>`
 
 After setup, AdGuard may move its main web UI to container port `80`.
 In this Compose setup that is published as:
