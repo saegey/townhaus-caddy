@@ -3,7 +3,7 @@
 mqtt:
   host: '${FRIGATE_MQTT_HOST}'
   # Port must resolve to an integer.
-  port: ${FRIGATE_MQTT_PORT}
+  port: 1883
   user: '${FRIGATE_MQTT_USER}'
   password: '${FRIGATE_MQTT_PASSWORD}'
   topic_prefix: '${FRIGATE_MQTT_TOPIC_PREFIX}'
@@ -54,9 +54,10 @@ cameras:
             - record
             - audio
     detect:
-      width: 960
-      height: 720
-      fps: 5
+      enabled: true
+      width: 640
+      height: 360
+      fps: 3
     live:
       streams:
         Stream 1: front_doorbell
@@ -76,7 +77,7 @@ version: 0.17-0
 go2rtc:
   streams:
     front_doorbell:
-      - rtsp://admin:${DOORBELL_PASSWORD}@192.168.2.137:554/Preview_01_main
+      - ${FRIGATE_DOORBELL_RTSP_URL}
       - ffmpeg:front_doorbell#video=h264
       - ffmpeg:front_doorbell#audio=opus
   homekit:
