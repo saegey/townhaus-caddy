@@ -25,11 +25,11 @@ Recommended dedicated internal hostnames:
 - `https://frigate` -> `http://beelink.tail0bdbb0.ts.net:5000`
 - `https://groovenet` -> `http://beelink.tail0bdbb0.ts.net:3000`
 - `https://ha` -> `http://homeassistant.tail0bdbb0.ts.net:8123`
-- `https://scrypted` -> `https://host.docker.internal:10443` (via Caddy container -> host gateway)
+- `https://scrypted` -> `http://beelink.tail0bdbb0.ts.net:11080`
 - `https://frigate.home.arpa` -> `http://beelink.tail0bdbb0.ts.net:5000`
 - `https://groovenet.home.arpa` -> `http://beelink.tail0bdbb0.ts.net:3000`
 - `https://ha.home.arpa` -> `http://homeassistant.tail0bdbb0.ts.net:8123`
-- `https://scrypted.home.arpa` -> `https://host.docker.internal:10443` (via Caddy container -> host gateway)
+- `https://scrypted.home.arpa` -> `http://beelink.tail0bdbb0.ts.net:11080`
 
 Optional alternate endpoints (included in `Caddyfile`):
 - `https://beelink/frigate`

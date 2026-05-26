@@ -83,14 +83,10 @@ unifi, unifi.home.arpa {
 # Scrypted UI:
 # - https://scrypted
 # - https://scrypted.home.arpa
-# Upstream uses HTTPS on 10443 and may present a self-signed cert.
+# Upstream is reached via MagicDNS host on HTTP 11080.
 scrypted, scrypted.home.arpa {
 	import common
-	reverse_proxy https://host.docker.internal:10443 {
-		transport http {
-			tls_insecure_skip_verify
-		}
-	}
+	reverse_proxy http://beelink.tail0bdbb0.ts.net:11080
 }
 
 # Optional alternate layout (not recommended for Frigate/HA path handling):
