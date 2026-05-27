@@ -6,7 +6,7 @@ Infrastructure-oriented Docker Compose deployment for Frigate on Debian 12 with 
 
 - `docker-compose.yml`: Frigate service definition
 - `.env.example`: environment variable template
-- `config/config.yml`: starter Frigate configuration
+- `config/config.template.yml`: starter Frigate configuration template
 - `storage/`: bind-mounted media storage (recordings, clips, snapshots)
 - `scripts/`: helper operational scripts
 
@@ -66,11 +66,14 @@ cp .env.example .env
 
 Important: Frigate config environment substitution expects variables beginning with `FRIGATE_` (for example `FRIGATE_MQTT_HOST`).
 
-3. Update `config/config.yml`:
+3. Update `config/config.template.yml`:
 - Set MQTT broker credentials to match the existing external Home Assistant MQTT broker.
 - Set `mqtt.port` if your broker is not on `1883`.
 - Replace the placeholder RTSP URL in `cameras.front_door.ffmpeg.inputs[0].path`, then set `enabled: true` when ready.
 - Set `go2rtc.homekit.<camera>.pin` (or `FRIGATE_HOMEKIT_PIN` in `.env`) for Apple Home pairing.
+
+At startup, `./scripts/start.sh` seeds `/srv/storage/frigate-config/config.yml` from this template
+only if the runtime config does not already exist.
 
 4. Start Frigate:
 

@@ -21,8 +21,8 @@ services:
     # Use host localtime for aligned timestamps in logs/events.
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - ./config:/config
-      - ./storage:/media/frigate
+      - /srv/storage/frigate-config:/config
+      - /srv/storage/frigate:/media/frigate
 
     # tmpfs cache avoids unnecessary disk writes for ephemeral cache data.
     tmpfs:
