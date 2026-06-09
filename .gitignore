@@ -1,0 +1,6 @@
+.env
+ansible/group_vars/townhaus_caddy.yml
+ansible/group_vars/townhaus_caddy/main.yml
+ansible/inventory.ini
+certs/
+data/

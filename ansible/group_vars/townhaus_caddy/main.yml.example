@@ -1,0 +1,31 @@
+townhaus_caddy_app_dir: /srv/docker/townhaus-caddy
+townhaus_caddy_owner: saegey
+townhaus_caddy_group: saegey
+
+townhaus_caddy_compose_project_name: townhaus-caddy
+townhaus_caddy_pull_images: true
+
+# Required: 1Password secret reference resolved locally with `op read`.
+# Example: op://Homelab/Immich Database/password
+# Replace this placeholder before running the playbook.
+townhaus_caddy_immich_db_password_ref: op://Vault/Item/field
+
+townhaus_caddy_env:
+  CADDY_HTTP_PORT: "80"
+  CADDY_HTTPS_PORT: "443"
+  TZ: America/Los_Angeles
+
+  ADGUARD_DNS_PORT: "53"
+  ADGUARD_ADMIN_PORT: "3001"
+  ADGUARD_WEB_PORT: "3080"
+
+  IMMICH_VERSION: v2.7.5
+  IMMICH_UPLOAD_LOCATION: /srv/storage/immich/library
+  IMMICH_DB_DATA_LOCATION: /srv/docker/townhaus-caddy/data/immich/postgres
+  IMMICH_DB_HOSTNAME: immich-database
+  IMMICH_DB_PORT: "5432"
+  IMMICH_DB_PASSWORD: "{{ townhaus_caddy_immich_db_password }}"
+  IMMICH_DB_USERNAME: postgres
+  IMMICH_DB_DATABASE_NAME: immich
+  IMMICH_REDIS_HOSTNAME: immich-redis
+  IMMICH_REDIS_PORT: "6379"

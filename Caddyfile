@@ -63,6 +63,15 @@ adguard, adguard.home.arpa {
 	reverse_proxy http://adguardhome:80
 }
 
+# Immich web UI:
+# - https://immich
+# - https://immich.home.arpa
+# Proxied directly to the Immich server container on the Compose network.
+immich, immich.home.arpa {
+	import common
+	reverse_proxy http://immich-server:2283
+}
+
 # UniFi appliance UI:
 # - https://unifi
 # - https://unifi.home.arpa

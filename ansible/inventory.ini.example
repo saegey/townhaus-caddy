@@ -1,0 +1,2 @@
+[townhaus_caddy]
+beelink ansible_host=beelink ansible_user=saegey

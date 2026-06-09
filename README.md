@@ -6,7 +6,7 @@ Production-quality Caddy setup for an internal-only homelab network, using:
 - Caddy internal CA (`tls internal`) for HTTPS certs
 
 This setup is designed to run from:
-- `/srv/docker/caddy`
+- `/srv/docker/townhaus-caddy`
 
 ## Recommended folder structure
 
@@ -16,6 +16,10 @@ This setup is designed to run from:
 ├── Caddyfile
 ├── .env
 ├── certs/
+├── data/
+│   └── immich/
+│       ├── library/
+│       └── postgres/
 └── README.md
 ```
 
@@ -26,10 +30,12 @@ Recommended dedicated internal hostnames:
 - `https://groovenet` -> `http://beelink.tail0bdbb0.ts.net:3000`
 - `https://ha` -> `http://homeassistant.tail0bdbb0.ts.net:8123`
 - `https://scrypted` -> `http://beelink.tail0bdbb0.ts.net:11080`
+- `https://immich` -> `http://immich-server:2283`
 - `https://frigate.home.arpa` -> `http://beelink.tail0bdbb0.ts.net:5000`
 - `https://groovenet.home.arpa` -> `http://beelink.tail0bdbb0.ts.net:3000`
 - `https://ha.home.arpa` -> `http://homeassistant.tail0bdbb0.ts.net:8123`
 - `https://scrypted.home.arpa` -> `http://beelink.tail0bdbb0.ts.net:11080`
+- `https://immich.home.arpa` -> `http://immich-server:2283`
 
 Optional alternate endpoints (included in `Caddyfile`):
 - `https://beelink/frigate`
@@ -48,7 +54,43 @@ Use `home.arpa` FQDNs on iOS for reliable resolution; short names are fine on de
 - No public DNS challenge or Let's Encrypt is needed.
 - TLS certificates are issued locally by Caddy’s internal CA and trusted on your devices.
 
-## Startup
+## Ansible deploy
+
+For the homelab host, use the included Ansible playbook instead of running Docker from your laptop.
+
+1. Create local deploy inputs:
+
+```bash
+cp ansible/inventory.ini.example ansible/inventory.ini
+mkdir -p ansible/group_vars/townhaus_caddy
+cp ansible/group_vars/townhaus_caddy/main.yml.example ansible/group_vars/townhaus_caddy/main.yml
+```
+
+2. Edit `ansible/group_vars/townhaus_caddy/main.yml`:
+
+- Confirm `townhaus_caddy_app_dir` is `/srv/docker/townhaus-caddy`
+- Adjust `IMMICH_UPLOAD_LOCATION` if you want media somewhere other than `/srv/storage/immich/library`
+- Set `townhaus_caddy_immich_db_password_ref` to your 1Password secret reference
+- Leave `IMMICH_DB_HOSTNAME` and `IMMICH_REDIS_HOSTNAME` on their defaults unless you intentionally rename those services
+
+3. Make sure 1Password CLI is installed and authenticated on the machine running Ansible.
+
+4. Run the deploy from this repo on your laptop:
+
+```bash
+ansible-playbook -i ansible/inventory.ini ansible/deploy.yml
+```
+
+The playbook resolves the secret reference locally with `op read` and writes the resulting value into the remote `.env`.
+
+The playbook will:
+- Create the target directories on `beelink`
+- Copy `docker-compose.yml`, `Caddyfile`, and `README.md` to `/srv/docker/townhaus-caddy`
+- Render the remote `.env`
+- Pull images
+- Run `docker compose up -d`
+
+## Manual startup
 
 1. Copy env template:
 
@@ -56,21 +98,27 @@ Use `home.arpa` FQDNs on iOS for reliable resolution; short names are fine on de
 cp .env.example .env
 ```
 
-2. Start:
+2. Update `.env`:
+
+- Set `IMMICH_DB_PASSWORD` to a random alphanumeric value
+- Adjust `IMMICH_UPLOAD_LOCATION` and `IMMICH_DB_DATA_LOCATION` if you want storage outside this repo
+
+3. Start:
 
 ```bash
 docker compose up -d
 ```
 
-3. Validate:
+4. Validate:
 
 ```bash
 docker compose ps
 docker compose logs -f caddy
 docker compose logs -f adguardhome
+docker compose logs -f immich-server
 ```
 
-4. First-time AdGuard setup:
+5. First-time AdGuard setup:
 
 - Open `http://<caddy-host-tailscale-ip>:3001`
 - Complete setup wizard
@@ -81,14 +129,28 @@ docker compose logs -f adguardhome
   - `groovenet` -> `<caddy-host-tailscale-ip>`
   - `ha` -> `<caddy-host-tailscale-ip>`
   - `scrypted` -> `<caddy-host-tailscale-ip>`
+  - `immich` -> `<caddy-host-tailscale-ip>`
   - `frigate.home.arpa` -> `<caddy-host-tailscale-ip>`
   - `groovenet.home.arpa` -> `<caddy-host-tailscale-ip>`
   - `ha.home.arpa` -> `<caddy-host-tailscale-ip>`
   - `scrypted.home.arpa` -> `<caddy-host-tailscale-ip>`
+  - `immich.home.arpa` -> `<caddy-host-tailscale-ip>`
 
 After setup, AdGuard may move its main web UI to container port `80`.
 In this Compose setup that is published as:
 - `http://<caddy-host-tailscale-ip>:3080`
+
+6. First-time Immich setup:
+
+- Open `https://immich` or `https://immich.home.arpa`
+- Trust Caddy's internal root CA on your devices if the browser warns about the certificate
+- Register the first Immich user; that account becomes the admin user
+- Uploaded assets are stored in `./data/immich/library` by default
+- The Immich Postgres data directory is `./data/immich/postgres` by default
+
+If you deploy with the included Ansible vars, the defaults are:
+- Immich library: `/srv/storage/immich/library`
+- Immich Postgres: `/srv/docker/townhaus-caddy/data/immich/postgres`
 
 ## Reload config (no downtime)
 
@@ -105,6 +167,9 @@ Follow logs:
 ```bash
 docker compose logs -f caddy
 docker compose logs -f adguardhome
+docker compose logs -f immich-server
+docker compose logs -f immich-machine-learning
+docker compose logs -f immich-database
 ```
 
 Recent logs:
@@ -112,9 +177,12 @@ Recent logs:
 ```bash
 docker compose logs --tail=200 caddy
 docker compose logs --tail=200 adguardhome
+docker compose logs --tail=200 immich-server
+docker compose logs --tail=200 immich-machine-learning
+docker compose logs --tail=200 immich-database
 ```
 
-## Caddy + AdGuard in one stack vs separate stacks
+## Caddy + app stack vs separate stacks
 
 Running together in one Compose project is fine for homelab and easier to operate:
 - One `.env`
