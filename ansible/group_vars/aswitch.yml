@@ -1,4 +1,4 @@
-aswitch_app_dir: "{{ ansible_env.HOME }}/aswitch"
+aswitch_app_dir: "{{ remote_home }}/aswitch"
 
 aswitch_services:
   - name: aswitch

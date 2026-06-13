@@ -8,10 +8,10 @@
         that:
           - townhaus_caddy_immich_db_password_ref is defined
           - townhaus_caddy_immich_db_password_ref | length > 0
-          - townhaus_caddy_immich_db_password_ref != "op://Homelab/Immich Database/password"
+          - townhaus_caddy_immich_db_password_ref != "op://Vault/Item/field"
         fail_msg: >-
           Define townhaus_caddy_immich_db_password_ref as a 1Password secret reference,
-          for example op://Homelab/Immich Database/password.
+          for example op://Homelab/ImmichDatabase/password.
 
     - name: Check 1Password CLI availability on the control machine
       ansible.builtin.command:

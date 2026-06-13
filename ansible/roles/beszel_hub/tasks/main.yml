@@ -1,6 +1,7 @@
 ---
-- name: Add beszel-hub service to docker-compose
-  ansible.builtin.debug:
-    msg: >-
-      Beszel Hub is managed as part of the Docker Compose stack on beelink.
-      Run the townhaus_caddy deploy playbook to apply docker-compose changes.
+- name: Install smartmontools for Beszel SMART monitoring
+  ansible.builtin.apt:
+    name: smartmontools
+    state: present
+    update_cache: true
+  become: true

@@ -4,7 +4,8 @@ adguard_user_ref: op://Homelab/AdGuard/username
 adguard_pass_ref: op://Homelab/AdGuard/password
 
 # Port the AdGuard admin API is mapped to on the host (see docker-compose ADGUARD_ADMIN_PORT).
-adguard_admin_port: 3001
+adguard_admin_port: 3080
+beszel_agent_user: root
 
 # IP address that all short hostnames should resolve to (beelink's LAN IP).
 # Caddy listens here and reverse-proxies to the actual service.

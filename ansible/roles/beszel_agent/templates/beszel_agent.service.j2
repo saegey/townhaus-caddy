@@ -5,7 +5,9 @@ Wants=network-online.target
 
 [Service]
 Type=simple
+User={{ beszel_agent_user }}
 Environment=LISTEN=0.0.0.0:{{ beszel_agent_port }}
+Environment=KEY_FILE=/etc/beszel-hub.pub
 ExecStart=/usr/local/bin/beszel-agent
 Restart=always
 RestartSec=5

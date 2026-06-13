@@ -7,7 +7,7 @@ Requires=camilladsp.service
 Type=simple
 User={{ ansible_user }}
 WorkingDirectory={{ camillagui_install_dir }}/camillagui_backend
-ExecStart={{ camillagui_install_dir }}/camillagui_backend/camillagui_backend {{ camillagui_install_dir }}/camillagui.yml
+ExecStart={{ camillagui_install_dir }}/camillagui_backend/camillagui_backend -c {{ camillagui_install_dir }}/camillagui.yml
 Restart=always
 RestartSec=5
 

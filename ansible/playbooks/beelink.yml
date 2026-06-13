@@ -12,6 +12,7 @@
       changed_when: false
 
   roles:
+    - role: beszel_hub
     - role: adguard_dns
     - role: beszel_agent
 

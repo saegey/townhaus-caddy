@@ -60,7 +60,7 @@
 
     - name: Download CamillaGUI bundle
       ansible.builtin.get_url:
-        url: "https://github.com/HEnquist/camillagui/releases/download/v{{ camillagui_version }}/bundle_linux_aarch64.tar.gz"
+        url: "https://github.com/HEnquist/camillagui-backend/releases/download/v{{ camillagui_version }}/bundle_linux_aarch64.tar.gz"
         dest: "{{ camillagui_install_dir }}/bundle_linux_aarch64.tar.gz"
         mode: "0644"
 

@@ -15,7 +15,7 @@
       # Archive name pattern: beszel_agent_linux_amd64.tar.gz / beszel_agent_linux_arm64.tar.gz
       # Verify the filename at https://github.com/henrygd/beszel/releases before upgrading.
       ansible.builtin.get_url:
-        url: "https://github.com/henrygd/beszel/releases/download/v{{ beszel_version }}/beszel_agent_linux_{{ _beszel_arch }}.tar.gz"
+        url: "https://github.com/henrygd/beszel/releases/download/v{{ beszel_version }}/beszel-agent_linux_{{ _beszel_arch }}.tar.gz"
         dest: /tmp/beszel_agent.tar.gz
         mode: "0644"
 
@@ -33,6 +33,41 @@
         path: /usr/local/bin/beszel-agent
         mode: "0755"
       become: true
+
+- name: Derive Beszel Hub public key from private key in volume
+  ansible.builtin.command:
+    argv:
+      - docker
+      - run
+      - --rm
+      - -v
+      - townhaus-caddy_beszel_data:/data:ro
+      - alpine
+      - sh
+      - -c
+      - apk add -q openssh-keygen && ssh-keygen -y -f /data/id_ed25519
+  delegate_to: "{{ beszel_hub_host }}"
+  register: _beszel_pubkey_result
+  changed_when: false
+
+- name: Store Beszel Hub public key
+  ansible.builtin.set_fact:
+    _beszel_pubkey: "{{ _beszel_pubkey_result.stdout | trim }}"
+
+- name: Authorize Beszel Hub SSH key on agent
+  ansible.posix.authorized_key:
+    user: "{{ ansible_user }}"
+    key: "{{ _beszel_pubkey }}"
+    comment: beszel-hub
+    state: present
+
+- name: Write Beszel Hub public key file for agent
+  ansible.builtin.copy:
+    content: "{{ _beszel_pubkey }}\n"
+    dest: /etc/beszel-hub.pub
+    mode: "0644"
+  become: true
+  notify: reload and restart beszel-agent
 
 - name: Deploy beszel-agent systemd service
   ansible.builtin.template:
