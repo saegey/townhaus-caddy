@@ -1,236 +1,203 @@
-# Caddy Homelab Reverse Proxy (Tailscale + MagicDNS)
+# townhaus-caddy
 
-Production-quality Caddy setup for an internal-only homelab network, using:
-- Tailscale for private network access
-- MagicDNS for upstream service resolution
-- Caddy internal CA (`tls internal`) for HTTPS certs
+Homelab monorepo managing a Caddy reverse proxy stack, Raspberry Pi audio services, CamillaDSP, Beszel monitoring, and AdGuard DNS — all deployed via Ansible.
 
-This setup is designed to run from:
-- `/srv/docker/townhaus-caddy`
+## Hosts
 
-## Recommended folder structure
+| Host | Role |
+|---|---|
+| `beelink.local` | Main server — Caddy, AdGuard, Immich, Beszel Hub |
+| `aswitch.local` | Audio Pi — Shairport, CamillaDSP, GPIO relay services |
+| `pi-cam.local` | Lounge Pi — Shairport, CamillaDSP, DAC status service |
 
-```text
-/srv/docker/caddy/
-├── docker-compose.yml
+## Services
+
+### beelink.local (Docker Compose)
+
+| Service | URL | Description |
+|---|---|---|
+| Caddy | — | Reverse proxy with internal TLS CA |
+| AdGuard Home | `https://adguard` | DNS server and ad blocker |
+| Immich | `https://immich` | Photo library |
+| Frigate | `https://frigate` | NVR / camera |
+| Groovenet | `https://groovenet` | Music streaming |
+| Home Assistant | `https://ha` | Home automation |
+| Scrypted | `https://scrypted` | Camera management |
+| UniFi | `https://unifi` | Network management |
+| Beszel | `https://beszel` | Node monitoring |
+
+### aswitch.local (systemd)
+
+| Service | Description |
+|---|---|
+| `aswitch.service` | GPIO relay — routes audio source via MQTT |
+| `audio_activity.service` | USB audio RMS detector — publishes active/inactive state |
+| `camilladsp.service` | DSP engine — EQ and processing |
+| `camillagui.service` | CamillaGUI web UI (`https://aswitch`) |
+| `shairport-sync.service` | AirPlay receiver → ALSA Loopback → CamillaDSP |
+
+### pi-cam.local (systemd)
+
+| Service | Description |
+|---|---|
+| `dac_status.service` | USB DAC presence detector — publishes to MQTT |
+| `camilladsp.service` | DSP engine — EQ and processing |
+| `camillagui.service` | CamillaGUI web UI (`https://pi-cam`) |
+| `shairport-sync.service` | AirPlay receiver → ALSA Loopback → CamillaDSP |
+
+### Audio signal chain (both Pis)
+
+```
+AirPlay source → Shairport Sync → ALSA Loopback → CamillaDSP → USB DAC → speakers
+```
+
+## Repository layout
+
+```
+.
+├── ansible/
+│   ├── ansible.cfg
+│   ├── inventory.ini           # gitignored — copy from inventory.ini.example
+│   ├── requirements.yml        # ansible-galaxy collections
+│   ├── deploy.yml              # beelink Docker stack playbook
+│   ├── group_vars/
+│   │   ├── all/main.yml        # shared vars (versions, ports, MQTT)
+│   │   ├── aswitch.yml         # aswitch-specific vars
+│   │   ├── pi_cam.yml          # pi-cam-specific vars
+│   │   └── townhaus_caddy/     # beelink vars (gitignored, copy from *.example)
+│   ├── playbooks/
+│   │   ├── beelink.yml         # AdGuard DNS + Beszel agent
+│   │   ├── aswitch.yml         # all aswitch services
+│   │   └── pi_cam.yml          # all pi-cam services
+│   └── roles/
+│       ├── aswitch_services/   # Python services + venv + env from 1Password
+│       ├── camilladsp/         # CamillaDSP + CamillaGUI install and config
+│       ├── shairport/          # shairport-sync.conf template
+│       ├── beszel_hub/         # smartmontools for SMART monitoring
+│       ├── beszel_agent/       # Beszel agent binary + service + Hub SSH key
+│       └── adguard_dns/        # declarative DNS rewrites via AdGuard API
+├── camilladsp/
+│   └── configs/                # reference EQ presets (scp'd from aswitch)
+├── services/
+│   └── aswitch/                # Python source (git subtree from aswitch repo)
+│       ├── aswitch.py
+│       ├── audio_activity.py
+│       ├── dac_status.py
+│       ├── home_assistant/     # example HA YAML
+│       └── esphome/            # ESPHome IR blaster config
 ├── Caddyfile
-├── .env
-├── certs/
-├── data/
-│   └── immich/
-│       ├── library/
-│       └── postgres/
-└── README.md
+└── docker-compose.yml
 ```
 
-## Endpoints
-
-Recommended dedicated internal hostnames:
-- `https://frigate` -> `http://beelink.tail0bdbb0.ts.net:5000`
-- `https://groovenet` -> `http://beelink.tail0bdbb0.ts.net:3000`
-- `https://ha` -> `http://homeassistant.tail0bdbb0.ts.net:8123`
-- `https://scrypted` -> `http://beelink.tail0bdbb0.ts.net:11080`
-- `https://immich` -> `http://immich-server:2283`
-- `https://frigate.home.arpa` -> `http://beelink.tail0bdbb0.ts.net:5000`
-- `https://groovenet.home.arpa` -> `http://beelink.tail0bdbb0.ts.net:3000`
-- `https://ha.home.arpa` -> `http://homeassistant.tail0bdbb0.ts.net:8123`
-- `https://scrypted.home.arpa` -> `http://beelink.tail0bdbb0.ts.net:11080`
-- `https://immich.home.arpa` -> `http://immich-server:2283`
-
-Optional alternate endpoints (included in `Caddyfile`):
-- `https://beelink/frigate`
-- `https://beelink/groovenet`
-- `https://homeassistant`
-
-Dedicated hostnames are preferred over nested paths because apps like Frigate and Home Assistant often behave better at site root.
-Use `home.arpa` FQDNs on iOS for reliable resolution; short names are fine on desktop if your local DNS/hosts supports them.
-
-## Why this works with Tailscale MagicDNS
-
-- Caddy runs as a reverse proxy and resolves upstream targets via MagicDNS:
-  - `beelink.tail0bdbb0.ts.net`
-  - `homeassistant.tail0bdbb0.ts.net`
-- Client devices connect to Caddy over Tailscale-private networking only.
-- No public DNS challenge or Let's Encrypt is needed.
-- TLS certificates are issued locally by Caddy’s internal CA and trusted on your devices.
-
-## Ansible deploy
-
-For the homelab host, use the included Ansible playbook instead of running Docker from your laptop.
-
-1. Create local deploy inputs:
+## Prerequisites
 
 ```bash
+brew install ansible 1password-cli
+ansible-galaxy collection install -r ansible/requirements.yml
+op signin
+```
+
+## First-time setup
+
+```bash
+# Inventory
 cp ansible/inventory.ini.example ansible/inventory.ini
-mkdir -p ansible/group_vars/townhaus_caddy
+# Edit ansible/inventory.ini — add ansible_host=<IP> for any host where mDNS is unreliable
+
+# beelink vars
 cp ansible/group_vars/townhaus_caddy/main.yml.example ansible/group_vars/townhaus_caddy/main.yml
+cp ansible/group_vars/townhaus_caddy/beszel.yml.example ansible/group_vars/townhaus_caddy/beszel.yml
+# Edit both files — set 1Password refs, beelink LAN IP, AdGuard credentials
 ```
 
-2. Edit `ansible/group_vars/townhaus_caddy/main.yml`:
+**1Password items required** (all in the `Homelab` vault):
 
-- Confirm `townhaus_caddy_app_dir` is `/srv/docker/townhaus-caddy`
-- Adjust `IMMICH_UPLOAD_LOCATION` if you want media somewhere other than `/srv/storage/immich/library`
-- Set `townhaus_caddy_immich_db_password_ref` to your 1Password secret reference
-- Leave `IMMICH_DB_HOSTNAME` and `IMMICH_REDIS_HOSTNAME` on their defaults unless you intentionally rename those services
+| Item | Fields |
+|---|---|
+| `Immich Database` | `password` |
+| `MQTT` | `username`, `password` |
+| `AdGuard` | `username`, `password` |
 
-3. Make sure 1Password CLI is installed and authenticated on the machine running Ansible.
-
-4. Run the deploy from this repo on your laptop:
+## Deploying
 
 ```bash
-ansible-playbook -i ansible/inventory.ini ansible/deploy.yml
+# beelink — Docker stack
+ansible-playbook ansible/deploy.yml
+
+# beelink — AdGuard DNS rewrites + Beszel agent
+ansible-playbook ansible/playbooks/beelink.yml --ask-become-pass
+
+# aswitch Pi
+ansible-playbook ansible/playbooks/aswitch.yml --ask-become-pass
+
+# pi-cam Pi
+ansible-playbook ansible/playbooks/pi_cam.yml --ask-become-pass
 ```
 
-The playbook resolves the secret reference locally with `op read` and writes the resulting value into the remote `.env`.
+## CamillaDSP presets
 
-The playbook will:
-- Create the target directories on `beelink`
-- Copy `docker-compose.yml`, `Caddyfile`, and `README.md` to `/srv/docker/townhaus-caddy`
-- Render the remote `.env`
-- Pull images
-- Run `docker compose up -d`
+Seven EQ presets are managed in `ansible/roles/camilladsp/templates/configs/` and deployed to both Pis. The ALSA capture/playback devices are set per-host in `group_vars`:
 
-## Manual startup
+| Preset | Description |
+|---|---|
+| `camilla.yml` | Default — light bass boost |
+| `flat.yml` | No processing |
+| `reference.yml` | Flat bass/treble at 0 dB |
+| `tonecontrol.yml` | Adjustable bass/treble |
+| `late-night.yml` | Bass and treble lift for low volumes |
+| `relaxed.yml` | Slight presence cut |
+| `warm.yml` | Bass lift, treble cut |
 
-1. Copy env template:
+Switch presets via the CamillaGUI web UI (`https://aswitch` or `https://pi-cam`).
 
-```bash
-cp .env.example .env
-```
+## AdGuard DNS
 
-2. Update `.env`:
+DNS rewrites are managed declaratively in `ansible/group_vars/townhaus_caddy/beszel.yml` under `adguard_dns_rewrites`. All short hostnames resolve to beelink's LAN IP; Caddy handles the reverse proxy. Run the beelink playbook to apply changes.
 
-- Set `IMMICH_DB_PASSWORD` to a random alphanumeric value
-- Adjust `IMMICH_UPLOAD_LOCATION` and `IMMICH_DB_DATA_LOCATION` if you want storage outside this repo
+## Beszel monitoring
 
-3. Start:
+Beszel Hub runs as a Docker container on beelink (`https://beszel`). Agents run on all three hosts. The Hub's SSH public key is automatically distributed to each agent via the Ansible playbooks — no manual key copying needed.
 
-```bash
-docker compose up -d
-```
+After running the playbooks, add each host in the Beszel UI (**Add System**) with port `45876`.
 
-4. Validate:
+beelink runs the agent as root for SMART disk monitoring (`smartmontools` installed automatically).
 
-```bash
-docker compose ps
-docker compose logs -f caddy
-docker compose logs -f adguardhome
-docker compose logs -f immich-server
-```
+## Caddy internal TLS
 
-5. First-time AdGuard setup:
-
-- Open `http://<caddy-host-tailscale-ip>:3001`
-- Complete setup wizard
-- Keep AdGuard DNS listening on port `53`
-- Point your Tailscale DNS or client DNS to your Caddy host Tailscale IP
-- Add DNS rewrites in AdGuard:
-  - `frigate` -> `<caddy-host-tailscale-ip>`
-  - `groovenet` -> `<caddy-host-tailscale-ip>`
-  - `ha` -> `<caddy-host-tailscale-ip>`
-  - `scrypted` -> `<caddy-host-tailscale-ip>`
-  - `immich` -> `<caddy-host-tailscale-ip>`
-  - `frigate.home.arpa` -> `<caddy-host-tailscale-ip>`
-  - `groovenet.home.arpa` -> `<caddy-host-tailscale-ip>`
-  - `ha.home.arpa` -> `<caddy-host-tailscale-ip>`
-  - `scrypted.home.arpa` -> `<caddy-host-tailscale-ip>`
-  - `immich.home.arpa` -> `<caddy-host-tailscale-ip>`
-
-After setup, AdGuard may move its main web UI to container port `80`.
-In this Compose setup that is published as:
-- `http://<caddy-host-tailscale-ip>:3080`
-
-6. First-time Immich setup:
-
-- Open `https://immich` or `https://immich.home.arpa`
-- Trust Caddy's internal root CA on your devices if the browser warns about the certificate
-- Register the first Immich user; that account becomes the admin user
-- Uploaded assets are stored in `./data/immich/library` by default
-- The Immich Postgres data directory is `./data/immich/postgres` by default
-
-If you deploy with the included Ansible vars, the defaults are:
-- Immich library: `/srv/storage/immich/library`
-- Immich Postgres: `/srv/docker/townhaus-caddy/data/immich/postgres`
-
-## Reload config (no downtime)
-
-After editing `Caddyfile`:
-
-```bash
-docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
-```
-
-## Logs
-
-Follow logs:
-
-```bash
-docker compose logs -f caddy
-docker compose logs -f adguardhome
-docker compose logs -f immich-server
-docker compose logs -f immich-machine-learning
-docker compose logs -f immich-database
-```
-
-Recent logs:
-
-```bash
-docker compose logs --tail=200 caddy
-docker compose logs --tail=200 adguardhome
-docker compose logs --tail=200 immich-server
-docker compose logs --tail=200 immich-machine-learning
-docker compose logs --tail=200 immich-database
-```
-
-## Caddy + app stack vs separate stacks
-
-Running together in one Compose project is fine for homelab and easier to operate:
-- One `.env`
-- One `docker compose up -d`
-- One place for backups
-
-Separate stacks are better only if you want independent lifecycle/isolation (for example DNS restarts independent from proxy changes).
-
-## Internal TLS model (`tls internal`)
-
-- `tls internal` tells Caddy to issue certs from its own local CA.
-- Caddy stores CA/certs in the persisted `caddy_data` volume.
-- Certs are valid only in your trusted internal context, not publicly trusted by browsers by default.
-
-## Trusting Caddy's internal root CA
-
-First export the root cert from the container:
+Caddy issues certs from its own local CA. Trust the root cert on your devices:
 
 ```bash
 mkdir -p ./certs
 docker compose cp caddy:/data/caddy/pki/authorities/local/root.crt ./certs/caddy-root.crt
-```
 
-### macOS
-
-```bash
+# macOS
 sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain ./certs/caddy-root.crt
-```
 
-### Linux (Debian/Ubuntu)
-
-```bash
+# Debian/Ubuntu
 sudo cp ./certs/caddy-root.crt /usr/local/share/ca-certificates/caddy-root.crt
 sudo update-ca-certificates
 ```
 
-### Linux (RHEL/Fedora/CentOS)
+## Useful commands
 
 ```bash
-sudo cp ./certs/caddy-root.crt /etc/pki/ca-trust/source/anchors/caddy-root.crt
-sudo update-ca-trust extract
+# Reload Caddy config without downtime
+docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
+
+# Follow logs
+docker compose logs -f caddy
+docker compose logs -f adguardhome
+docker compose logs -f immich-server
+docker compose logs -f beszel-hub
+
+# Check Pi service status
+ssh saegey@aswitch.local "systemctl status camilladsp camillagui shairport-sync aswitch audio_activity"
+ssh saegey@pi-cam.local "systemctl status camilladsp camillagui shairport-sync dac_status"
 ```
 
-If browser trust still fails, restart the browser after adding trust.
+## Home Assistant reverse proxy
 
-## Home Assistant reverse proxy requirements
-
-Add this to Home Assistant `configuration.yaml` (adjust subnet/IP to your Docker network as needed):
+Add to `configuration.yaml`:
 
 ```yaml
 http:
@@ -239,34 +206,4 @@ http:
     - 172.16.0.0/12
     - 192.168.0.0/16
     - 10.0.0.0/8
-```
-
-For tighter security, replace broad private CIDRs with the exact Docker bridge subnet or specific Caddy container IP range.
-
-Then restart Home Assistant.
-
-## WebSocket support
-
-Caddy `reverse_proxy` supports WebSockets by default, so Frigate, Home Assistant, and other realtime apps work without extra websocket directives.
-
-## Extending for future services
-
-Add a new site block in `Caddyfile`:
-
-```caddyfile
-grafana {
-	import common
-	reverse_proxy http://beelink.tail0bdbb0.ts.net:3001
-}
-```
-
-Same pattern applies for:
-- `portainer`
-- `meilisearch`
-- `minio`
-
-Then run:
-
-```bash
-docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
 ```
