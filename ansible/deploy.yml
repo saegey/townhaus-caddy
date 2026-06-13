@@ -1,0 +1,147 @@
+---
+- name: Deploy townhaus-caddy stack
+  hosts: townhaus_caddy
+  gather_facts: false
+  pre_tasks:
+    - name: Require an Immich DB password reference
+      ansible.builtin.assert:
+        that:
+          - townhaus_caddy_immich_db_password_ref is defined
+          - townhaus_caddy_immich_db_password_ref | length > 0
+          - townhaus_caddy_immich_db_password_ref != "op://Homelab/Immich Database/password"
+        fail_msg: >-
+          Define townhaus_caddy_immich_db_password_ref as a 1Password secret reference,
+          for example op://Homelab/Immich Database/password.
+
+    - name: Check 1Password CLI availability on the control machine
+      ansible.builtin.command:
+        argv:
+          - op
+          - --version
+      delegate_to: localhost
+      run_once: true
+      changed_when: false
+
+    - name: Resolve Immich DB password from 1Password CLI
+      ansible.builtin.command:
+        argv:
+          - op
+          - read
+          - "{{ townhaus_caddy_immich_db_password_ref }}"
+      delegate_to: localhost
+      run_once: true
+      register: townhaus_caddy_immich_db_password_result
+      changed_when: false
+      failed_when: false
+      no_log: true
+
+    - name: Require successful 1Password secret resolution
+      ansible.builtin.assert:
+        that:
+          - townhaus_caddy_immich_db_password_result.rc == 0
+          - townhaus_caddy_immich_db_password_result.stdout | length > 0
+        fail_msg: >-
+          Failed to resolve townhaus_caddy_immich_db_password_ref with `op read`
+          on the control machine. Verify that 1Password CLI is signed in
+          (`op whoami`) and that the secret reference works locally:
+          `op read "{{ townhaus_caddy_immich_db_password_ref }}"`.
+
+    - name: Store resolved Immich DB password
+      ansible.builtin.set_fact:
+        townhaus_caddy_immich_db_password: "{{ townhaus_caddy_immich_db_password_result.stdout }}"
+      no_log: true
+  tasks:
+    - name: Ensure app directory exists
+      ansible.builtin.file:
+        path: "{{ townhaus_caddy_app_dir }}"
+        state: directory
+        owner: "{{ townhaus_caddy_owner }}"
+        group: "{{ townhaus_caddy_group }}"
+        mode: "0755"
+
+    - name: Ensure Immich library directory exists
+      ansible.builtin.file:
+        path: "{{ townhaus_caddy_env.IMMICH_UPLOAD_LOCATION }}"
+        state: directory
+        owner: "{{ townhaus_caddy_owner }}"
+        group: "{{ townhaus_caddy_group }}"
+        mode: "0755"
+
+    - name: Ensure Immich Postgres directory exists without changing ownership
+      ansible.builtin.file:
+        path: "{{ townhaus_caddy_env.IMMICH_DB_DATA_LOCATION }}"
+        state: directory
+        mode: "0700"
+
+    - name: Copy stack files
+      ansible.builtin.copy:
+        src: "{{ item.src }}"
+        dest: "{{ townhaus_caddy_app_dir }}/{{ item.dest }}"
+        owner: "{{ townhaus_caddy_owner }}"
+        group: "{{ townhaus_caddy_group }}"
+        mode: "{{ item.mode }}"
+      loop:
+        - src: ../docker-compose.yml
+          dest: docker-compose.yml
+          mode: "0644"
+        - src: ../Caddyfile
+          dest: Caddyfile
+          mode: "0644"
+        - src: ../README.md
+          dest: README.md
+          mode: "0644"
+
+    - name: Render environment file
+      ansible.builtin.template:
+        src: templates/env.j2
+        dest: "{{ townhaus_caddy_app_dir }}/.env"
+        owner: "{{ townhaus_caddy_owner }}"
+        group: "{{ townhaus_caddy_group }}"
+        mode: "0600"
+      no_log: true
+
+    - name: Pull updated images
+      ansible.builtin.command:
+        argv:
+          - docker
+          - compose
+          - pull
+      args:
+        chdir: "{{ townhaus_caddy_app_dir }}"
+      register: townhaus_caddy_pull_result
+      changed_when: "'Downloaded newer image' in townhaus_caddy_pull_result.stdout or 'Pull complete' in townhaus_caddy_pull_result.stdout"
+      when: townhaus_caddy_pull_images | bool
+
+    - name: Start or update stack
+      ansible.builtin.command:
+        argv:
+          - docker
+          - compose
+          - -p
+          - "{{ townhaus_caddy_compose_project_name }}"
+          - up
+          - -d
+      args:
+        chdir: "{{ townhaus_caddy_app_dir }}"
+      register: townhaus_caddy_up_result
+      changed_when: >
+        'Creating' in townhaus_caddy_up_result.stdout or
+        'Recreating' in townhaus_caddy_up_result.stdout or
+        'Starting' in townhaus_caddy_up_result.stdout
+
+    - name: Show compose status
+      ansible.builtin.command:
+        argv:
+          - docker
+          - compose
+          - -p
+          - "{{ townhaus_caddy_compose_project_name }}"
+          - ps
+      args:
+        chdir: "{{ townhaus_caddy_app_dir }}"
+      register: townhaus_caddy_ps_result
+      changed_when: false
+
+    - name: Print compose status
+      ansible.builtin.debug:
+        var: townhaus_caddy_ps_result.stdout_lines
