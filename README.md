@@ -25,6 +25,7 @@ Homelab monorepo managing a Caddy reverse proxy stack, Frigate NVR, Raspberry Pi
 | Scrypted | `https://scrypted` | Camera management |
 | UniFi | `https://unifi` | Network management |
 | Beszel | `https://beszel` | Node monitoring |
+| Uptime Kuma | `https://uptime` | HTTP endpoint monitoring |
 
 ### aswitch.local (systemd)
 

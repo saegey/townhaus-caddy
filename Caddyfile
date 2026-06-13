@@ -114,6 +114,14 @@ pi-cam, pi-cam.home.arpa {
 	reverse_proxy http://pi-cam.local:5005
 }
 
+# Uptime Kuma endpoint monitoring:
+# - https://uptime
+# - https://uptime.home.arpa
+uptime, uptime.home.arpa {
+	import common
+	reverse_proxy http://uptime-kuma:3001
+}
+
 # Beszel monitoring hub:
 # - https://beszel
 # - https://beszel.home.arpa
