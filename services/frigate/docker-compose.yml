@@ -1,0 +1,34 @@
+services:
+  frigate:
+    # Stable Frigate image for production usage.
+    image: ghcr.io/blakeblackshear/frigate:stable
+    container_name: frigate
+    restart: unless-stopped
+    privileged: true
+    shm_size: "256mb"
+
+    # Load deployment-specific values from .env (MQTT, TZ, UID/GID, etc).
+    env_file:
+      - .env
+    
+    # HomeKit via go2rtc relies on local discovery; host mode is the simplest path.
+    network_mode: host
+
+    # Device pass-through for Intel VAAPI decode/encode.
+    devices:
+      - /dev/dri/renderD128:/dev/dri/renderD128
+
+    # Use host localtime for aligned timestamps in logs/events.
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /srv/storage/frigate-config:/config
+      - /srv/storage/frigate:/media/frigate
+
+    # tmpfs cache avoids unnecessary disk writes for ephemeral cache data.
+    tmpfs:
+      - /tmp/cache:size=1g,mode=1777
+
+    # Optional hardening and predictable shutdown behavior.
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 30s

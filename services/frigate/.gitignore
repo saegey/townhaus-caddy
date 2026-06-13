@@ -1,0 +1,20 @@
+# Environment secrets
+.env
+
+# Runtime/log artifacts
+*.log
+
+# macOS
+.DS_Store
+
+# Editor/IDE
+.vscode/
+.idea/
+
+# Keep storage directory tracked, but ignore contents
+storage/*
+!storage/.gitkeep
+
+# Frigate runtime config artifacts (template is tracked)
+config/*
+!config/config.template.yml

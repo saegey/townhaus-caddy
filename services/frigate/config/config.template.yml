@@ -1,0 +1,102 @@
+# Frigate core settings.
+# MQTT points at an external broker (typically provided by Home Assistant stack).
+mqtt:
+  host: 192.168.1.10
+  # Port must resolve to an integer.
+  port: 1883
+  user: frigate
+  password: change_me
+  topic_prefix: frigate
+
+# Object detection can run on CPU initially; tune later if using EdgeTPU/GPU detectors.
+detectors:
+  cpu1:
+    type: cpu
+
+# Intel VAAPI acceleration settings for ffmpeg.
+# Frigate will use /dev/dri/renderD128 passed from docker-compose.
+ffmpeg:
+  hwaccel_args: preset-vaapi
+
+# Recordings path is backed by ./storage bind mount.
+record:
+  enabled: true
+  continuous:
+    days: 1
+  motion:
+    days: 7
+
+snapshots:
+  enabled: true
+  bounding_box: true
+  crop: true
+  retain:
+    default: 7
+
+audio:
+  enabled: true
+  listen:
+    - bark
+    - scream
+    - speech
+    - yell
+
+# Frigate requires a cameras section; starter camera is disabled by default.
+cameras:
+  front_doorbell:
+    enabled: true
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/front_doorbell
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+            - record
+            - audio
+    detect:
+      enabled: true
+      width: 640
+      height: 360
+      fps: 3
+    live:
+      streams:
+        Stream 1: front_doorbell
+    semantic_search:
+      triggers:
+        person_seen:
+          enabled: true
+          type: description
+          data: When a person is identified
+          threshold: 0.5
+          actions: []
+          friendly_name: Person seen
+birdseye:
+  enabled: true
+  mode: objects
+version: 0.17-0
+go2rtc:
+  streams:
+    front_doorbell:
+      - '{FRIGATE_DOORBELL_RTSP_URL}#backchannel=0'
+      - ffmpeg:front_doorbell#video=h264
+      - ffmpeg:front_doorbell#audio=opus
+    front_doorbell_talk:
+      - '{FRIGATE_DOORBELL_RTSP_URL}'
+      - ffmpeg:front_doorbell_talk#video=h264
+      - ffmpeg:front_doorbell_talk#audio=opus
+  homekit:
+    front_doorbell_talk:
+      pin: "19550224"
+
+
+semantic_search:
+  enabled: true
+  model_size: small
+face_recognition:
+  enabled: false
+  model_size: small
+lpr:
+  enabled: false
+classification:
+  bird:
+    enabled: false
