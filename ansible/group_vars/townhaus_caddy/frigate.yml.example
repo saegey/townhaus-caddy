@@ -1,0 +1,18 @@
+# Frigate NVR configuration.
+# Create a 'Frigate' item in your Homelab 1Password vault with these fields
+# before running the beelink playbook.
+
+# MQTT broker host for Frigate — use LAN hostname or IP.
+frigate_mqtt_host: homeassistant.local
+frigate_mqtt_user: frigate
+
+# Email for Frigate push notifications.
+frigate_notifications_email: you@example.com
+
+# 1Password secret references — set field names to match your vault item.
+frigate_mqtt_pass_ref: op://Homelab/Frigate/mqtt_password
+frigate_doorbell_rtsp_url_ref: op://Homelab/Frigate/doorbell_rtsp_url
+frigate_doorbell_talk_rtsp_url_ref: op://Homelab/Frigate/doorbell_talk_rtsp_url
+frigate_backyard_rtsp_url_ref: op://Homelab/Frigate/backyard_rtsp_url
+frigate_backyard_rtsp_sub_url_ref: op://Homelab/Frigate/backyard_rtsp_sub_url
+frigate_homekit_pin_ref: op://Homelab/Frigate/homekit_pin

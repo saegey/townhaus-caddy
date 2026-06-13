@@ -34,7 +34,7 @@
 # - https://frigate.home.arpa
 frigate, frigate.home.arpa {
 	import common
-	reverse_proxy http://beelink.tail0bdbb0.ts.net:5000
+	reverse_proxy http://host.docker.internal:5000
 }
 
 # Groovenet: dual endpoints for desktop/iOS compatibility:
@@ -42,7 +42,7 @@ frigate, frigate.home.arpa {
 # - https://groovenet.home.arpa
 groovenet, groovenet.home.arpa {
 	import common
-	reverse_proxy http://beelink.tail0bdbb0.ts.net:3000
+	reverse_proxy http://host.docker.internal:3000
 }
 
 # Home Assistant: dual endpoints for desktop/iOS compatibility:
@@ -51,7 +51,7 @@ groovenet, groovenet.home.arpa {
 # Home Assistant needs correct forwarded headers and trusted_proxies.
 ha, ha.home.arpa {
 	import common
-	reverse_proxy http://homeassistant.tail0bdbb0.ts.net:8123
+	reverse_proxy http://homeassistant.local:8123
 }
 
 # AdGuard Home admin UI:
@@ -78,7 +78,7 @@ immich, immich.home.arpa {
 # Upstream uses HTTPS on 8443 and commonly presents a self-signed cert.
 unifi, unifi.home.arpa {
 	import common
-	reverse_proxy https://homeassistant.tail0bdbb0.ts.net:8443 {
+	reverse_proxy https://homeassistant.local:8443 {
 		header_up Host homeassistant.local:8443
 		header_up X-Forwarded-Host {host}
 		header_up X-Forwarded-Proto https
@@ -95,7 +95,7 @@ unifi, unifi.home.arpa {
 # Upstream is reached via MagicDNS host on HTTP 11080.
 scrypted, scrypted.home.arpa {
 	import common
-	reverse_proxy http://beelink.tail0bdbb0.ts.net:11080
+	reverse_proxy http://host.docker.internal:11080
 }
 
 # CamillaGUI on aswitch.local (DSP for audio switching Pi):
@@ -127,10 +127,10 @@ beszel, beszel.home.arpa {
 beelink {
 	import common
 	handle_path /frigate/* {
-		reverse_proxy http://beelink.tail0bdbb0.ts.net:5000
+		reverse_proxy http://host.docker.internal:5000
 	}
 	handle_path /groovenet/* {
-		reverse_proxy http://beelink.tail0bdbb0.ts.net:3000
+		reverse_proxy http://host.docker.internal:3000
 	}
 	respond 404
 }
@@ -139,5 +139,5 @@ beelink {
 # https://homeassistant
 homeassistant {
 	import common
-	reverse_proxy http://homeassistant.tail0bdbb0.ts.net:8123
+	reverse_proxy http://homeassistant.local:8123
 }

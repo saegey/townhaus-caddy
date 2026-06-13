@@ -1,6 +1,6 @@
 # townhaus-caddy
 
-Homelab monorepo managing a Caddy reverse proxy stack, Raspberry Pi audio services, CamillaDSP, Beszel monitoring, and AdGuard DNS — all deployed via Ansible.
+Homelab monorepo managing a Caddy reverse proxy stack, Frigate NVR, Raspberry Pi audio services, CamillaDSP, Beszel monitoring, and AdGuard DNS — all deployed via Ansible.
 
 ## Hosts
 
@@ -66,25 +66,29 @@ AirPlay source → Shairport Sync → ALSA Loopback → CamillaDSP → USB DAC �
 │   │   ├── pi_cam.yml          # pi-cam-specific vars
 │   │   └── townhaus_caddy/     # beelink vars (gitignored, copy from *.example)
 │   ├── playbooks/
-│   │   ├── beelink.yml         # AdGuard DNS + Beszel agent
+│   │   ├── beelink.yml         # AdGuard DNS + Beszel agent + Frigate config
 │   │   ├── aswitch.yml         # all aswitch services
 │   │   └── pi_cam.yml          # all pi-cam services
 │   └── roles/
 │       ├── aswitch_services/   # Python services + venv + env from 1Password
 │       ├── camilladsp/         # CamillaDSP + CamillaGUI install and config
 │       ├── shairport/          # shairport-sync.conf template
+│       ├── frigate/            # Frigate config template + 1Password secrets
 │       ├── beszel_hub/         # smartmontools for SMART monitoring
 │       ├── beszel_agent/       # Beszel agent binary + service + Hub SSH key
 │       └── adguard_dns/        # declarative DNS rewrites via AdGuard API
 ├── camilladsp/
 │   └── configs/                # reference EQ presets (scp'd from aswitch)
 ├── services/
-│   └── aswitch/                # Python source (git subtree from aswitch repo)
-│       ├── aswitch.py
-│       ├── audio_activity.py
-│       ├── dac_status.py
-│       ├── home_assistant/     # example HA YAML
-│       └── esphome/            # ESPHome IR blaster config
+│   ├── aswitch/                # Python source (git subtree from aswitch repo)
+│   │   ├── aswitch.py
+│   │   ├── audio_activity.py
+│   │   ├── dac_status.py
+│   │   ├── home_assistant/     # example HA YAML
+│   │   └── esphome/            # ESPHome IR blaster config
+│   └── frigate/                # Frigate infra (git subtree from frigate-beelink)
+│       ├── docker-compose.yml  # standalone compose (superseded by root compose)
+│       └── config/             # config template reference
 ├── Caddyfile
 └── docker-compose.yml
 ```
@@ -117,6 +121,7 @@ cp ansible/group_vars/townhaus_caddy/beszel.yml.example ansible/group_vars/townh
 | `Immich Database` | `password` |
 | `MQTT` | `username`, `password` |
 | `AdGuard` | `username`, `password` |
+| `Frigate` | `mqtt_password`, `doorbell_rtsp_url`, `doorbell_talk_rtsp_url`, `backyard_rtsp_url`, `backyard_rtsp_sub_url`, `homekit_pin` |
 
 ## Deploying
 
@@ -149,6 +154,22 @@ Seven EQ presets are managed in `ansible/roles/camilladsp/templates/configs/` an
 | `warm.yml` | Bass lift, treble cut |
 
 Switch presets via the CamillaGUI web UI (`https://aswitch` or `https://pi-cam`).
+
+## Frigate NVR
+
+Frigate runs as a Docker service on beelink with `network_mode: host` (required for go2rtc/HomeKit local discovery). The config is deployed to `/srv/storage/frigate-config/config.yml` by the Ansible `frigate` role.
+
+All credentials (MQTT password, camera RTSP URLs, HomeKit PIN) are stored in 1Password and rendered into the config at deploy time — no plaintext secrets in the repo.
+
+```bash
+# First-time setup
+cp ansible/group_vars/townhaus_caddy/frigate.yml.example ansible/group_vars/townhaus_caddy/frigate.yml
+# Edit frigate.yml — set frigate_mqtt_host, email, and 1Password refs
+
+# Deploy config + start container
+ansible-playbook ansible/playbooks/beelink.yml --ask-become-pass
+ansible-playbook ansible/deploy.yml
+```
 
 ## AdGuard DNS
 

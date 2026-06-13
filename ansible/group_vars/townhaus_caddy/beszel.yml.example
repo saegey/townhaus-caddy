@@ -20,3 +20,5 @@ adguard_dns_rewrites:
   - domain: pi-cam.home.arpa
   - domain: beszel
   - domain: beszel.home.arpa
+  - domain: frigate
+  - domain: frigate.home.arpa

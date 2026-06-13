@@ -2,6 +2,7 @@
 ansible/group_vars/townhaus_caddy.yml
 ansible/group_vars/townhaus_caddy/main.yml
 ansible/group_vars/townhaus_caddy/beszel.yml
+ansible/group_vars/townhaus_caddy/frigate.yml
 ansible/group_vars/aswitch_secrets.yml
 ansible/group_vars/pi_cam_secrets.yml
 ansible/inventory.ini

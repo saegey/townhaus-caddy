@@ -1,0 +1,153 @@
+mqtt:
+  host: {{ frigate_mqtt_host }}
+  port: {{ frigate_mqtt_port | default(1883) }}
+  user: {{ frigate_mqtt_user }}
+  password: {{ _frigate_mqtt_password }}
+  topic_prefix: frigate
+
+detectors:
+  cpu1:
+    type: cpu
+
+ffmpeg:
+  hwaccel_args: preset-vaapi
+
+record:
+  enabled: true
+  continuous:
+    days: 1
+  motion:
+    days: 7
+
+snapshots:
+  enabled: true
+  bounding_box: true
+  crop: true
+  retain:
+    default: 7
+
+audio:
+  enabled: true
+  listen:
+    - bark
+    - scream
+    - speech
+    - yell
+
+cameras:
+  front_doorbell:
+    enabled: true
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/front_doorbell
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+            - record
+            - audio
+    detect:
+      enabled: true
+      width: 640
+      height: 360
+      fps: 3
+    live:
+      streams:
+        Stream 1: front_doorbell_talk
+    semantic_search:
+      triggers: {}
+    notifications:
+      enabled: true
+    zones:
+      driveway:
+        coordinates: 0.002,0.72,0.363,0.593,0.395,0.588,0.395,0.441,0.901,0.451,0.906,0.487,0.997,0.475,0.997,0.984,0.003,0.988
+        loitering_time: 0
+        friendly_name: Driveway
+    review:
+      alerts:
+        required_zones: driveway
+      detections:
+        required_zones: driveway
+  backyard:
+    enabled: true
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/backyard_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+            - audio
+        - path: rtsp://127.0.0.1:8554/backyard
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+      output_args:
+        record: preset-record-generic-audio-aac
+    detect:
+      enabled: true
+      width: 640
+      height: 360
+      fps: 5
+    live:
+      streams:
+        Backyard: backyard
+        Backyard Sub: backyard_sub
+
+birdseye:
+  enabled: true
+  mode: objects
+
+version: 0.17-0
+
+go2rtc:
+  streams:
+    front_doorbell:
+      - "{{ _frigate_doorbell_rtsp_url }}#backchannel=0"
+      - ffmpeg:front_doorbell#video=h264
+      - ffmpeg:front_doorbell#audio=opus
+    front_doorbell_talk:
+      - "{{ _frigate_doorbell_talk_rtsp_url }}"
+      - ffmpeg:front_doorbell_talk#video=h264
+      - ffmpeg:front_doorbell_talk#audio=opus
+    backyard:
+      - "{{ _frigate_backyard_rtsp_url }}"
+    backyard_sub:
+      - "{{ _frigate_backyard_rtsp_sub_url }}"
+  homekit:
+    front_doorbell_talk:
+      pin: "{{ _frigate_homekit_pin }}"
+
+semantic_search:
+  enabled: true
+  model_size: small
+
+face_recognition:
+  enabled: true
+  model_size: large
+
+lpr:
+  enabled: false
+
+classification:
+  bird:
+    enabled: true
+  custom:
+    Mailman:
+      enabled: true
+      name: Mailman
+      threshold: 0.8
+      object_config:
+        objects:
+          - person
+        classification_type: sub_label
+    Neighbor:
+      enabled: true
+      name: Neighbor
+      threshold: 0.8
+      object_config:
+        objects:
+          - person
+        classification_type: attribute
+
+notifications:
+  enabled: true
+  email: {{ frigate_notifications_email }}

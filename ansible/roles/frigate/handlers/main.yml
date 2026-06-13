@@ -1,0 +1,7 @@
+---
+- name: restart frigate
+  ansible.builtin.command:
+    argv: [docker, restart, frigate]
+  become: true
+  changed_when: true
+  failed_when: false

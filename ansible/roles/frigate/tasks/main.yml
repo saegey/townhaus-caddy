@@ -1,0 +1,48 @@
+---
+- name: Resolve Frigate secrets from 1Password
+  ansible.builtin.command:
+    argv: [op, read, "{{ item.ref }}"]
+  delegate_to: localhost
+  loop:
+    - { ref: "{{ frigate_mqtt_pass_ref }}" }
+    - { ref: "{{ frigate_doorbell_rtsp_url_ref }}" }
+    - { ref: "{{ frigate_doorbell_talk_rtsp_url_ref }}" }
+    - { ref: "{{ frigate_backyard_rtsp_url_ref }}" }
+    - { ref: "{{ frigate_backyard_rtsp_sub_url_ref }}" }
+    - { ref: "{{ frigate_homekit_pin_ref }}" }
+  register: _frigate_secrets
+  changed_when: false
+  no_log: true
+
+- name: Store Frigate secrets
+  ansible.builtin.set_fact:
+    _frigate_mqtt_password: "{{ _frigate_secrets.results[0].stdout }}"
+    _frigate_doorbell_rtsp_url: "{{ _frigate_secrets.results[1].stdout }}"
+    _frigate_doorbell_talk_rtsp_url: "{{ _frigate_secrets.results[2].stdout }}"
+    _frigate_backyard_rtsp_url: "{{ _frigate_secrets.results[3].stdout }}"
+    _frigate_backyard_rtsp_sub_url: "{{ _frigate_secrets.results[4].stdout }}"
+    _frigate_homekit_pin: "{{ _frigate_secrets.results[5].stdout }}"
+  no_log: true
+
+- name: Ensure Frigate config directory exists
+  ansible.builtin.file:
+    path: /srv/storage/frigate-config
+    state: directory
+    mode: "0755"
+  become: true
+
+- name: Ensure Frigate media directory exists
+  ansible.builtin.file:
+    path: /srv/storage/frigate
+    state: directory
+    mode: "0755"
+  become: true
+
+- name: Deploy Frigate config
+  ansible.builtin.template:
+    src: config.yml.j2
+    dest: /srv/storage/frigate-config/config.yml
+    mode: "0644"
+  become: true
+  no_log: true
+  notify: restart frigate
