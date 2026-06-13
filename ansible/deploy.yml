@@ -129,6 +129,20 @@
         'Recreating' in townhaus_caddy_up_result.stdout or
         'Starting' in townhaus_caddy_up_result.stdout
 
+    - name: Reload Caddy config
+      ansible.builtin.command:
+        argv:
+          - docker
+          - exec
+          - caddy
+          - caddy
+          - reload
+          - --config
+          - /etc/caddy/Caddyfile
+          - --adapter
+          - caddyfile
+      changed_when: false
+
     - name: Show compose status
       ansible.builtin.command:
         argv:
