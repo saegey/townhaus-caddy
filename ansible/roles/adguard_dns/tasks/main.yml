@@ -30,6 +30,25 @@
     return_content: true
   register: _adguard_rewrites
 
+- name: Delete rewrites with wrong answer
+  ansible.builtin.uri:
+    url: "http://localhost:{{ adguard_admin_port }}/control/rewrite/delete"
+    method: POST
+    url_username: "{{ _adguard_user }}"
+    url_password: "{{ _adguard_pass }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      domain: "{{ item.domain }}"
+      answer: "{{ (_adguard_rewrites.json | selectattr('domain', 'equalto', item.domain) | list | first).answer }}"
+    status_code: 200
+  loop: "{{ adguard_dns_rewrites }}"
+  when: >
+    (_adguard_rewrites.json | selectattr('domain', 'equalto', item.domain) | list | length > 0) and
+    (_adguard_rewrites.json | selectattr('domain', 'equalto', item.domain) | list | first).answer != adguard_dns_answer
+  loop_control:
+    label: "{{ item.domain }}"
+
 - name: Add missing DNS rewrites
   ansible.builtin.uri:
     url: "http://localhost:{{ adguard_admin_port }}/control/rewrite/add"
@@ -44,6 +63,7 @@
     status_code: 200
   loop: "{{ adguard_dns_rewrites }}"
   when: >
-    _adguard_rewrites.json | selectattr('domain', 'equalto', item.domain) | list | length == 0
+    (_adguard_rewrites.json | selectattr('domain', 'equalto', item.domain) | list | length == 0) or
+    (_adguard_rewrites.json | selectattr('domain', 'equalto', item.domain) | list | first).answer != adguard_dns_answer
   loop_control:
     label: "{{ item.domain }}"
