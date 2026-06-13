@@ -1,0 +1,16 @@
+[Unit]
+Description=Audio activity MQTT publisher
+After=network-online.target sound.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=__ASWITCH_USER__
+WorkingDirectory=__ASWITCH_REMOTE_DIR__
+EnvironmentFile=-__ASWITCH_REMOTE_DIR__/.env
+ExecStart=__ASWITCH_REMOTE_DIR__/.venv/bin/python __ASWITCH_REMOTE_DIR__/audio_activity.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

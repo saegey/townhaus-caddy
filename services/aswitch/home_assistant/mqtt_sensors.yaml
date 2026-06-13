@@ -1,0 +1,41 @@
+mqtt:
+  switch:
+    - name: "Amp Power"
+      unique_id: aswitch_amp_power
+      command_topic: "aswitch/trigger"
+      state_topic: "aswitch/trigger/state"
+      payload_on: "on"
+      payload_off: "off"
+
+    - name: "Audio Source DAC"
+      unique_id: aswitch_audio_source_dac
+      command_topic: "aswitch/audio"
+      state_topic: "aswitch/audio/state"
+      payload_on: "dac"
+      payload_off: "mixer"
+
+    - name: "Mixer Recording"
+      unique_id: "aswitch_mixer_recording"
+      command_topic: "aswitch/audio_recording/set"
+      state_topic: "aswitch/audio_recording/state"
+      payload_on: "on"
+      payload_off: "off"
+
+  binary_sensor:
+    - name: "Mixer Audio Activity"
+      unique_id: "aswitch_mixer_audio_activity"
+      state_topic: "aswitch/audio_activity/state"
+      payload_on: "active"
+      payload_off: "inactive"
+      device_class: sound
+
+    - name: "Fosi ZD3 Status"
+      unique_id: "fosi_zd3_status"
+      state_topic: "aswitch/dac/zd3/state"
+      payload_on: "connected"
+      payload_off: "disconnected"
+      availability_topic: "aswitch/dac/zd3/availability"
+      payload_available: "online"
+      payload_not_available: "offline"
+      device_class: connectivity
+      icon: "mdi:usb-port"

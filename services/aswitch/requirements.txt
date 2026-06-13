@@ -1,0 +1,4 @@
+RPi.GPIO
+paho-mqtt
+numpy
+sounddevice

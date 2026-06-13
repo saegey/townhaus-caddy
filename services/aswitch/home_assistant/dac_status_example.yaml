@@ -1,0 +1,21 @@
+mqtt:
+  binary_sensor:
+    - name: "Fosi ZD3 DAC Connected"
+      unique_id: "aswitch_fosi_zd3_connected"
+      state_topic: "aswitch/dac/zd3/state"
+      payload_on: "connected"
+      payload_off: "disconnected"
+      availability_topic: "aswitch/dac/zd3/availability"
+      payload_available: "online"
+      payload_not_available: "offline"
+      device_class: connectivity
+      icon: "mdi:usb-port"
+
+  sensor:
+    - name: "Fosi ZD3 DAC USB Details"
+      unique_id: "aswitch_fosi_zd3_usb_details"
+      state_topic: "aswitch/dac/zd3/details"
+      availability_topic: "aswitch/dac/zd3/availability"
+      payload_available: "online"
+      payload_not_available: "offline"
+      icon: "mdi:information-outline"

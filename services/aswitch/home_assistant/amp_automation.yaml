@@ -1,0 +1,49 @@
+automation:
+  - alias: "Amp On When Audio Is Active"
+    id: "aswitch_amp_on_when_audio_is_active"
+    mode: single
+    triggers:
+      - trigger: state
+        entity_id: binary_sensor.mixer_audio_activity
+        to: "on"
+      - trigger: state
+        entity_id: media_player.your_streaming_box
+        to: "playing"
+    actions:
+      - action: switch.turn_on
+        target:
+          entity_id: switch.amp_power
+
+  - alias: "Amp Off When Nothing Is Playing"
+    id: "aswitch_amp_off_when_nothing_is_playing"
+    mode: single
+    triggers:
+      - trigger: state
+        entity_id: binary_sensor.mixer_audio_activity
+        to: "off"
+        for: "00:05:00"
+      - trigger: state
+        entity_id: media_player.your_streaming_box
+        to: "idle"
+        for: "00:02:00"
+      - trigger: state
+        entity_id: media_player.your_streaming_box
+        to: "off"
+        for: "00:02:00"
+      - trigger: state
+        entity_id: media_player.your_streaming_box
+        to: "paused"
+        for: "00:10:00"
+    conditions:
+      - condition: state
+        entity_id: binary_sensor.mixer_audio_activity
+        state: "off"
+      - condition: not
+        conditions:
+          - condition: state
+            entity_id: media_player.your_streaming_box
+            state: "playing"
+    actions:
+      - action: switch.turn_off
+        target:
+          entity_id: switch.amp_power

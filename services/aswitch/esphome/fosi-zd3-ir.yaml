@@ -1,0 +1,124 @@
+substitutions:
+  name: m5stack-atom-echo-237e14
+  friendly_name: M5Stack Atom Echo 237e14
+  # Substitutions like wifi_ssid / wifi_password come from secrets.yaml.
+  # Copy secrets.yaml.example -> secrets.yaml and fill in values.
+  <<: !include secrets.yaml
+
+esphome:
+  name: fosi-zd3-ir
+  friendly_name: Fosi ZD3 IR
+
+esp32:
+  board: m5stack-atom
+  framework:
+    type: arduino
+
+logger:
+
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+# Atom Echo / Atom IR pin may vary.
+# Try GPIO12 first for Atom Echo-style examples.
+# If this does nothing, use an external Grove IR emitter instead.
+remote_transmitter:
+  pin: GPIO12
+  carrier_duty_percent: 50%
+
+button:
+  - platform: template
+    name: "ZD3 Power"
+    on_press:
+      - remote_transmitter.transmit_nec:
+          address: 0x01FA
+          command: 0xFA05
+
+  - platform: template
+    name: "ZD3 Mute"
+    on_press:
+      - remote_transmitter.transmit_nec:
+          address: 0x01FA
+          command: 0xFD02
+
+  - platform: template
+    name: "ZD3 Volume Up"
+    on_press:
+      - remote_transmitter.transmit_nec:
+          address: 0x01FA
+          command: 0xFC03
+
+  - platform: template
+    name: "ZD3 Volume Down"
+    on_press:
+      - remote_transmitter.transmit_nec:
+          address: 0x01FA
+          command: 0xF807
+
+  - platform: template
+    name: "ZD3 Display Toggle"
+    on_press:
+      - remote_transmitter.transmit_nec:
+          address: 0x01FA
+          command: 0xFE01
+
+  - platform: template
+    name: "ZD3 USB"
+    on_press:
+      - remote_transmitter.transmit_nec:
+          address: 0x01FA
+          command: 0xEE11
+
+  - platform: template
+    name: "ZD3 Optical"
+    on_press:
+      - remote_transmitter.transmit_nec:
+          address: 0x01FA
+          command: 0xF708
+
+  - platform: template
+    name: "ZD3 Coax"
+    on_press:
+      - remote_transmitter.transmit_nec:
+          address: 0x01FA
+          command: 0xF609
+
+  - platform: template
+    name: "ZD3 HDMI"
+    on_press:
+      - remote_transmitter.transmit_nec:
+          address: 0x01FA
+          command: 0xEC13
+
+  - platform: template
+    name: "ZD3 Bluetooth"
+    on_press:
+      - remote_transmitter.transmit_nec:
+          address: 0x01FA
+          command: 0xEA15
+
+  - platform: template
+    name: "ZD3 Play Pause"
+    on_press:
+      - remote_transmitter.transmit_nec:
+          address: 0x01FA
+          command: 0xF50A
+
+  - platform: template
+    name: "ZD3 Next"
+    on_press:
+      - remote_transmitter.transmit_nec:
+          address: 0x01FA
+          command: 0xF906
+
+  - platform: template
+    name: "ZD3 Previous"
+    on_press:
+      - remote_transmitter.transmit_nec:
+          address: 0x01FA
+          command: 0xFB04

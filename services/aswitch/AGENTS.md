@@ -1,0 +1,88 @@
+# AGENTS.md — aswitch
+
+Raspberry Pi MQTT relay controller and audio monitoring suite. Three independent Python services run on one or more Pis and publish state to Home Assistant via MQTT.
+
+## Services
+
+### `aswitch.local`
+
+| File | Systemd unit | Purpose |
+|---|---|---|
+| `aswitch.py` | `aswitch.service` | GPIO relay switch — routes audio source (DAC vs mixer) and controls a trigger output via MQTT commands |
+| `audio_activity.py` | `audio_activity.service` | USB audio RMS detector — publishes active/inactive state, debug RMS values, and optionally records WAV files |
+
+### `pi-cam.local`
+
+| File | Systemd unit | Purpose |
+|---|---|---|
+| `dac_status.py` | `dac_status.service` | USB DAC presence detector — polls `lsusb` and publishes connected/disconnected state |
+
+`pi-cam.local` runs only `dac_status.py`. No relay switching, GPIO, or audio recording — amp control is handled by the ESPHome IR blaster (`esphome/fosi-zd3-ir.yaml`).
+
+## Key patterns
+
+**Configuration** — All tunables come from environment variables (loaded from `.env` on the Pi via the systemd `EnvironmentFile=` directive). No config files, no argparse. Module-level constants are derived from `os.environ.get(...)` at import time.
+
+**MQTT** — All three services use `paho-mqtt` v2 callback API (`CallbackAPIVersion.VERSION2`). Guard credential calls with `if MQTT_USERNAME` — do not call `username_pw_set()` unconditionally, as passing `None` can cause connection failures.
+
+**Logging** — Use `logging` throughout; never `print()`. The root logger is configured in `main()` via `logging.basicConfig`. Pass format args to the logger call (`logger.info("x=%s", x)`) rather than f-strings, so the string is only rendered when the message is actually emitted.
+
+**Threading in `audio_activity.py`** — `RecordingWriter` is a daemon `Thread`. Shared mutable state (`recording_enabled`, `current_wave`, `current_path`, `dropped_blocks`, `last_error`) is protected by `self.state_lock`. Anything you read or write from outside the `RecordingWriter` thread must hold that lock.
+
+**`logger.exception()`** — automatically appends the current exception's traceback and message. Do not pass the caught exception as a format argument — `logger.exception("Failed")` is correct; `logger.exception("Failed: %s", exc)` is redundant.
+
+## Linting
+
+```bash
+pip install ruff
+ruff check .        # lint
+ruff check . --fix  # auto-fix safe issues
+ruff format .       # format
+```
+
+Config lives in `pyproject.toml`. Rules enabled: `E`, `W`, `F` (pyflakes), `I` (isort), `UP` (pyupgrade), `B` (bugbear), `LOG`/`G` (logging correctness).
+
+## Deploy
+
+```bash
+./deploy/deploy.sh                                     # aswitch service to aswitch.local
+ASWITCH_SERVICE=audio_activity.service \
+ASWITCH_SERVICE_TEMPLATE=audio_activity.service \
+./deploy/deploy.sh                                     # audio_activity service
+
+ASWITCH_HOST=pi-cam.local \
+ASWITCH_SERVICE=dac_status.service \
+ASWITCH_SERVICE_TEMPLATE=dac_status.service \
+./deploy/deploy.sh                                     # dac_status service to pi-cam.local
+```
+
+The deploy script rsyncs Python files and `requirements.txt`, creates or reuses a virtualenv at `/home/<user>/aswitch/.venv`, installs deps, and restarts the service.
+
+Push updated `.env` without redeploying code:
+
+```bash
+ASWITCH_HOST=pi-cam.local \
+ASWITCH_ENV_FILE=env/pi-cam.env \
+./deploy/push_env.sh
+```
+
+## Environment files
+
+| File | Purpose |
+|---|---|
+| `.env.example` | Template for a single-host `.env` |
+| `env/aswitch.example.env` | Template for `aswitch.local` |
+| `env/pi-cam.example.env` | Template for `pi-cam.local` |
+
+Secret `.env` files (gitignored): `env/aswitch.env`, `env/pi-cam.env`, and any file matching `env/*.env` that does not end in `.example.env`.
+
+## Testing
+
+There are no automated tests. Services are hardware-coupled (GPIO, USB audio, `lsusb`). Validate changes by:
+
+1. Running `ruff check .` locally.
+2. Deploying to the Pi and tailing the journal: `journalctl -u <service>.service -f`.
+
+## Home Assistant integration
+
+MQTT topics published by each service are documented in `README.md`. Example sensor/switch YAML is in `home_assistant/`. The `amp_automation.yaml` automation auto-powers the amp based on audio activity.

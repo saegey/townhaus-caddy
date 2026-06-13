@@ -1,0 +1,89 @@
+alias: "ZD3: Auto power/input from lounge streamer"
+triggers:
+  - trigger: state
+    entity_id: media_player.lounge_streamer
+    to: playing
+    id: streamer_playing
+  - trigger: state
+    entity_id: media_player.lounge_streamer
+    to:
+      - idle
+      - "off"
+    for: "00:03:00"
+    id: streamer_stopped
+actions:
+  - choose:
+      # Streamer starts playing
+      - conditions:
+          - condition: trigger
+            id: streamer_playing
+        sequence:
+          # Power on the ZD3 only if TV is off and ZD3 is not already on
+          - if:
+              - condition: state
+                entity_id: remote.lounge_tv
+                state: "off"
+              - condition: state
+                entity_id: binary_sensor.fosi_zd3_status
+                state: "off"
+            then:
+              - action: button.press
+                target:
+                  entity_id: button.fosi_zd3_ir_zd3_power
+              - delay: "00:00:03"
+          - action: button.press
+            target:
+              entity_id: button.fosi_zd3_ir_zd3_usb
+          - delay: "00:00:05"
+          # Mute TV if it is on, so audio comes from ZD3 only
+          - if:
+              - condition: state
+                entity_id: media_player.lounge_tv
+                state: "on"
+            then:
+              - action: media_player.volume_mute
+                target:
+                  entity_id: media_player.lounge_tv
+                data:
+                  is_volume_muted: true
+
+      # Streamer stops, TV is on — switch ZD3 back to HDMI and unmute TV
+      - conditions:
+          - condition: trigger
+            id: streamer_stopped
+          - condition: state
+            entity_id: remote.lounge_tv
+            state: "on"
+          - condition: state
+            entity_id: binary_sensor.fosi_zd3_status
+            state: "on"
+        sequence:
+          - action: button.press
+            target:
+              entity_id: button.fosi_zd3_ir_zd3_hdmi
+          - delay: "00:00:05"
+          - action: media_player.volume_mute
+            target:
+              entity_id: media_player.lounge_tv
+            data:
+              is_volume_muted: false
+
+      # Streamer stops, TV is off — switch to HDMI then power off ZD3
+      - conditions:
+          - condition: trigger
+            id: streamer_stopped
+          - condition: state
+            entity_id: remote.lounge_tv
+            state: "off"
+          - condition: state
+            entity_id: binary_sensor.fosi_zd3_status
+            state: "on"
+        sequence:
+          - action: button.press
+            target:
+              entity_id: button.fosi_zd3_ir_zd3_hdmi
+          - delay: "00:00:01"
+          - action: button.press
+            target:
+              entity_id: button.fosi_zd3_ir_zd3_power
+mode: restart

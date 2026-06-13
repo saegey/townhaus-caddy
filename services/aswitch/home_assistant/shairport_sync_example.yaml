@@ -1,0 +1,61 @@
+# Example snippets for exposing a Raspberry Pi Shairport Sync endpoint as a
+# Home Assistant media_player using MQTT.
+#
+# Recommended approach:
+# 1. Install the custom "Shairport Sync" integration in Home Assistant via HACS:
+#    https://github.com/parautenbach/hass-shairport-sync
+# 2. Configure Shairport Sync on the Pi to publish MQTT metadata and accept
+#    remote-control commands.
+# 3. Add the integration in Home Assistant and point it at the topic below.
+#
+# Replace placeholders before use:
+# - your-mqtt-broker
+# - aswitch/shairport
+# - media_player.shairport_sync_player
+# - switch.amp_power
+
+shairport_sync_conf_mqtt: |
+  mqtt =
+  {
+      enabled = "yes";
+      hostname = "your-mqtt-broker";
+      port = 1883;
+      topic = "aswitch/shairport";
+      publish_parsed = "yes";
+      publish_cover = "yes";
+      enable_remote = "yes";
+  }
+
+# Home Assistant custom integration notes:
+# - Install "Shairport Sync" with HACS.
+# - In Home Assistant, add the integration and enter:
+#   - Name: Shairport Sync Player
+#   - MQTT topic: aswitch/shairport
+#
+# Or if you prefer YAML and the custom integration supports it in your setup:
+shairport_sync_media_player_yaml: |
+  media_player:
+    - platform: shairport_sync
+      name: Shairport Sync Player
+      topic: aswitch/shairport
+
+# Optional wrapper that combines the Shairport media player with the amp power
+# switch. This gives you one media_player entity in Lovelace that can turn the
+# amp on/off while still reflecting playback state from Shairport Sync.
+universal_media_player_yaml: |
+  media_player:
+    - platform: universal
+      name: Universal Shairport Sync Player
+      children:
+        - media_player.shairport_sync_player
+      commands:
+        turn_on:
+          service: switch.turn_on
+          target:
+            entity_id: switch.amp_power
+        turn_off:
+          service: switch.turn_off
+          target:
+            entity_id: switch.amp_power
+      attributes:
+        state: switch.amp_power
