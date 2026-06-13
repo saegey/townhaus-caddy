@@ -1,0 +1,37 @@
+description: Relaxed
+
+devices:
+  capture:
+    channels: 2
+    device: hw:0,1
+    format: S32_LE
+    type: Alsa
+  chunksize: 1024
+  playback:
+    channels: 2
+    device: hw:2,0
+    format: S32_LE
+    type: Alsa
+  samplerate: 44100
+
+filters:
+  Presence:
+    parameters:
+      freq: 2500
+      gain: -1.5
+      q: 1.0
+      type: Peaking
+    type: Biquad
+
+pipeline:
+- channels:
+  - 0
+  - 1
+  names:
+  - Presence
+  type: Filter
+
+mixers: null
+processors: null
+
+title: Relaxed

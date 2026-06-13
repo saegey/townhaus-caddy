@@ -1,0 +1,49 @@
+---
+# Declarative DNS rewrites for AdGuard Home.
+# Add entries to adguard_dns_rewrites in group_vars/townhaus_caddy/ to manage them here.
+# All entries point to beelink so Caddy handles the reverse proxy.
+
+- name: Resolve AdGuard credentials from 1Password
+  ansible.builtin.command:
+    argv: [op, read, "{{ item.ref }}"]
+  delegate_to: localhost
+  loop:
+    - { ref: "{{ adguard_user_ref }}", var: user }
+    - { ref: "{{ adguard_pass_ref }}", var: pass }
+  register: _adguard_creds
+  changed_when: false
+  no_log: true
+
+- name: Store AdGuard credentials
+  ansible.builtin.set_fact:
+    _adguard_user: "{{ _adguard_creds.results[0].stdout }}"
+    _adguard_pass: "{{ _adguard_creds.results[1].stdout }}"
+  no_log: true
+
+- name: Fetch current DNS rewrites
+  ansible.builtin.uri:
+    url: "http://localhost:{{ adguard_admin_port }}/control/rewrite/list"
+    method: GET
+    url_username: "{{ _adguard_user }}"
+    url_password: "{{ _adguard_pass }}"
+    force_basic_auth: true
+    return_content: true
+  register: _adguard_rewrites
+
+- name: Add missing DNS rewrites
+  ansible.builtin.uri:
+    url: "http://localhost:{{ adguard_admin_port }}/control/rewrite/add"
+    method: POST
+    url_username: "{{ _adguard_user }}"
+    url_password: "{{ _adguard_pass }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      domain: "{{ item.domain }}"
+      answer: "{{ adguard_dns_answer }}"
+    status_code: 200
+  loop: "{{ adguard_dns_rewrites }}"
+  when: >
+    _adguard_rewrites.json | selectattr('domain', 'equalto', item.domain) | list | length == 0
+  loop_control:
+    label: "{{ item.domain }}"

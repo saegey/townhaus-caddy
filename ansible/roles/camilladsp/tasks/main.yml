@@ -1,0 +1,143 @@
+---
+- name: Load snd-aloop kernel module now
+  community.general.modprobe:
+    name: snd-aloop
+    state: present
+  become: true
+
+- name: Persist snd-aloop across reboots
+  ansible.builtin.copy:
+    content: "snd-aloop\n"
+    dest: /etc/modules-load.d/snd-aloop.conf
+    mode: "0644"
+  become: true
+
+- name: Check installed CamillaDSP version
+  ansible.builtin.command: "{{ camilladsp_install_dir }}/camilladsp --version"
+  register: _cdsp_installed_version
+  changed_when: false
+  failed_when: false
+
+- name: Download and install CamillaDSP binary
+  when: >
+    _cdsp_installed_version.rc != 0 or
+    camilladsp_version not in _cdsp_installed_version.stdout
+  block:
+    - name: Download CamillaDSP archive
+      ansible.builtin.get_url:
+        url: "https://github.com/HEnquist/camilladsp/releases/download/v{{ camilladsp_version }}/camilladsp-linux-aarch64.tar.gz"
+        dest: /tmp/camilladsp.tar.gz
+        mode: "0644"
+
+    - name: Extract CamillaDSP binary
+      ansible.builtin.unarchive:
+        src: /tmp/camilladsp.tar.gz
+        dest: "{{ camilladsp_install_dir }}"
+        remote_src: true
+        include:
+          - camilladsp
+      become: true
+
+    - name: Make CamillaDSP executable
+      ansible.builtin.file:
+        path: "{{ camilladsp_install_dir }}/camilladsp"
+        mode: "0755"
+      become: true
+
+- name: Check installed CamillaGUI version
+  ansible.builtin.stat:
+    path: "{{ camillagui_install_dir }}/camillagui_backend/camillagui_backend"
+  register: _cgui_stat
+
+- name: Download and install CamillaGUI bundle
+  when: not _cgui_stat.stat.exists
+  block:
+    - name: Ensure CamillaGUI directory exists
+      ansible.builtin.file:
+        path: "{{ camillagui_install_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Download CamillaGUI bundle
+      ansible.builtin.get_url:
+        url: "https://github.com/HEnquist/camillagui/releases/download/v{{ camillagui_version }}/bundle_linux_aarch64.tar.gz"
+        dest: "{{ camillagui_install_dir }}/bundle_linux_aarch64.tar.gz"
+        mode: "0644"
+
+    - name: Extract CamillaGUI bundle
+      ansible.builtin.unarchive:
+        src: "{{ camillagui_install_dir }}/bundle_linux_aarch64.tar.gz"
+        dest: "{{ camillagui_install_dir }}"
+        remote_src: true
+
+- name: Ensure CamillaDSP directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ camilladsp_config_dir }}"
+    - "{{ camilladsp_config_dir }}/configs"
+    - "{{ camilladsp_config_dir }}/coeffs"
+    - "{{ camilladsp_config_dir }}/filters"
+
+- name: Deploy CamillaDSP config presets
+  ansible.builtin.template:
+    src: "configs/{{ item }}.j2"
+    dest: "{{ camilladsp_config_dir }}/configs/{{ item }}"
+    mode: "0644"
+  loop:
+    - camilla.yml
+    - flat.yml
+    - late-night.yml
+    - reference.yml
+    - relaxed.yml
+    - tonecontrol.yml
+    - warm.yml
+  notify: restart camilladsp
+
+- name: Initialize CamillaDSP statefile if absent
+  ansible.builtin.copy:
+    content: "---\nconfig_path: {{ camilladsp_config_dir }}/configs/camilla.yml\n"
+    dest: "{{ camilladsp_config_dir }}/statefile.yml"
+    force: false
+    mode: "0644"
+
+- name: Deploy CamillaGUI backend config
+  ansible.builtin.template:
+    src: camillagui.yml.j2
+    dest: "{{ camillagui_install_dir }}/camillagui.yml"
+    mode: "0644"
+  notify: restart camillagui
+
+- name: Deploy CamillaDSP systemd service
+  ansible.builtin.template:
+    src: camilladsp.service.j2
+    dest: /etc/systemd/system/camilladsp.service
+    mode: "0644"
+  become: true
+  notify: reload and restart camilladsp
+
+- name: Deploy CamillaGUI systemd service
+  ansible.builtin.template:
+    src: camillagui.service.j2
+    dest: /etc/systemd/system/camillagui.service
+    mode: "0644"
+  become: true
+  notify: reload and restart camillagui
+
+- name: Enable and start CamillaDSP
+  ansible.builtin.systemd:
+    name: camilladsp.service
+    enabled: true
+    state: started
+    daemon_reload: true
+  become: true
+
+- name: Enable and start CamillaGUI
+  ansible.builtin.systemd:
+    name: camillagui.service
+    enabled: true
+    state: started
+    daemon_reload: true
+  become: true

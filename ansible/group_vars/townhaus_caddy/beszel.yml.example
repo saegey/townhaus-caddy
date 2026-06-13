@@ -1,0 +1,21 @@
+# AdGuard Home – admin API credentials from 1Password.
+# Create these items before running the beelink playbook.
+adguard_user_ref: op://Homelab/AdGuard/username
+adguard_pass_ref: op://Homelab/AdGuard/password
+
+# Port the AdGuard admin API is mapped to on the host (see docker-compose ADGUARD_ADMIN_PORT).
+adguard_admin_port: 3001
+
+# IP address that all short hostnames should resolve to (beelink's LAN IP).
+# Caddy listens here and reverse-proxies to the actual service.
+adguard_dns_answer: "192.168.1.x"
+
+# Declarative list of DNS rewrites to maintain in AdGuard.
+# Both the short name and the .home.arpa variant are needed for iOS/macOS compatibility.
+adguard_dns_rewrites:
+  - domain: aswitch
+  - domain: aswitch.home.arpa
+  - domain: pi-cam
+  - domain: pi-cam.home.arpa
+  - domain: beszel
+  - domain: beszel.home.arpa

@@ -1,0 +1,26 @@
+aswitch_app_dir: "{{ ansible_env.HOME }}/aswitch"
+
+aswitch_services:
+  - name: aswitch
+    script: aswitch.py
+  - name: audio_activity
+    script: audio_activity.py
+
+# 1Password secret references – resolved at deploy time with `op read`.
+# Create these items in 1Password before running the playbook.
+aswitch_mqtt_user_ref: op://Homelab/MQTT/username
+aswitch_mqtt_pass_ref: op://Homelab/MQTT/password
+
+aswitch_env_extra:
+  AUDIO_DEVICE: "plughw:CARD=CODEC,DEV=0"
+  RECORDINGS_DIR: "{{ ansible_env.HOME }}/aswitch/recordings"
+  RECORDING_ATTENUATION_DB: "-6.0"
+
+shairport_name: aswitch
+shairport_alsa_output: "hw:Loopback,0,0"
+shairport_mqtt_topic: aswitch/shairport
+shairport_mqtt_publish_parsed: "no"
+shairport_mqtt_publish_cover: "no"
+
+camilladsp_capture_device: "hw:Loopback,1"
+camilladsp_playback_device: "plughw:CARD=AUDIO,DEV=0"

@@ -1,0 +1,19 @@
+---
+- name: Configure beelink.local – AdGuard DNS and Beszel agent
+  hosts: townhaus_caddy
+  gather_facts: true
+
+  pre_tasks:
+    - name: Verify 1Password CLI is available
+      ansible.builtin.command:
+        argv: [op, --version]
+      delegate_to: localhost
+      run_once: true
+      changed_when: false
+
+  roles:
+    - role: adguard_dns
+    - role: beszel_agent
+
+# Run the existing Docker stack playbook separately:
+#   ansible-playbook ansible/deploy.yml -i ansible/inventory.ini

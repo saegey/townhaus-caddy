@@ -1,0 +1,47 @@
+description: Reference
+
+devices:
+  capture:
+    channels: 2
+    device: hw:0,1
+    format: S32_LE
+    type: Alsa
+  chunksize: 1024
+  playback:
+    channels: 2
+    device: hw:2,0
+    format: S32_LE
+    type: Alsa
+  samplerate: 44100
+
+filters:
+  Bass:
+    parameters:
+      freq: 85
+      gain: 0.0
+      q: 0.9
+      type: Lowshelf
+    type: Biquad
+
+  Treble:
+    parameters:
+      freq: 6500
+      gain: 0.0
+      q: 0.7
+      type: Highshelf
+    type: Biquad
+
+mixers: null
+
+pipeline:
+- channels:
+  - 0
+  - 1
+  names:
+  - Bass
+  - Treble
+  type: Filter
+
+processors: null
+
+title: Reference

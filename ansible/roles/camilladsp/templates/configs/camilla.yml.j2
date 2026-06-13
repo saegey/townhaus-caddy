@@ -1,0 +1,36 @@
+description: null
+
+devices:
+  capture:
+    channels: 2
+    device: "{{ camilladsp_capture_device }}"
+    format: "{{ camilladsp_format }}"
+    type: Alsa
+  chunksize: {{ camilladsp_chunksize }}
+  playback:
+    channels: 2
+    device: "{{ camilladsp_playback_device }}"
+    format: "{{ camilladsp_format }}"
+    type: Alsa
+  samplerate: {{ camilladsp_samplerate }}
+
+filters:
+  bassboost:
+    parameters:
+      freq: 100
+      gain: 3
+      q: 0.7
+      type: Lowshelf
+    type: Biquad
+
+pipeline:
+- channels:
+  - 0
+  names:
+  - bassboost
+  type: Filter
+- channels:
+  - 1
+  names:
+  - bassboost
+  type: Filter

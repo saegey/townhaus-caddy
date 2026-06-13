@@ -1,0 +1,58 @@
+description: null
+devices:
+  adjust_period: null
+  capture:
+    channels: 2
+    device: hw:0,1
+    format: S32_LE
+    labels: null
+    link_mute_control: null
+    link_volume_control: null
+    stop_on_inactive: null
+    type: Alsa
+  capture_samplerate: null
+  chunksize: 1024
+  enable_rate_adjust: null
+  multithreaded: null
+  playback:
+    channels: 2
+    device: hw:2,0
+    format: S32_LE
+    type: Alsa
+  queuelimit: null
+  rate_measure_interval: null
+  samplerate: 44100
+  silence_threshold: null
+  silence_timeout: null
+  stop_on_rate_change: null
+  target_level: null
+  volume_limit: null
+  volume_ramp_time: null
+  worker_threads: null
+filters:
+  bassboost:
+    description: null
+    parameters:
+      freq: 100
+      gain: 3
+      q: 0.7
+      type: Lowshelf
+    type: Biquad
+mixers: null
+pipeline:
+- bypassed: null
+  channels:
+  - 0
+  description: null
+  names:
+  - bassboost
+  type: Filter
+- bypassed: null
+  channels:
+  - 1
+  description: null
+  names:
+  - bassboost
+  type: Filter
+processors: null
+title: null

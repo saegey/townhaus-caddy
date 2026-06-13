@@ -1,0 +1,15 @@
+[Unit]
+Description=CamillaDSP Web UI
+After=network.target camilladsp.service
+Requires=camilladsp.service
+
+[Service]
+Type=simple
+User={{ ansible_user }}
+WorkingDirectory={{ camillagui_install_dir }}/camillagui_backend
+ExecStart={{ camillagui_install_dir }}/camillagui_backend/camillagui_backend {{ camillagui_install_dir }}/camillagui.yml
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

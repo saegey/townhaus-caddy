@@ -46,6 +46,20 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  beszel-hub:
+    image: henrygd/beszel:latest
+    container_name: beszel_hub
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    volumes:
+      - beszel_data:/beszel_data
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   immich-server:
     image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-v2.7.5}
     container_name: immich_server
@@ -134,3 +148,4 @@ volumes:
   adguard_work:
   adguard_conf:
   immich_model_cache:
+  beszel_data:

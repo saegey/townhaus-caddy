@@ -1,0 +1,16 @@
+[Unit]
+Description={{ item.name }} MQTT service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User={{ ansible_user }}
+WorkingDirectory={{ aswitch_app_dir }}
+EnvironmentFile=-{{ aswitch_app_dir }}/.env
+ExecStart={{ aswitch_app_dir }}/.venv/bin/python {{ aswitch_app_dir }}/{{ item.script }}
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

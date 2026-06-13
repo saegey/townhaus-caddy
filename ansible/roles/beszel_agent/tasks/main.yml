@@ -1,0 +1,51 @@
+---
+- name: Set architecture-specific asset name
+  ansible.builtin.set_fact:
+    _beszel_arch: "{{ 'amd64' if ansible_architecture == 'x86_64' else 'arm64' }}"
+
+- name: Check if beszel-agent is installed
+  ansible.builtin.stat:
+    path: /usr/local/bin/beszel-agent
+  register: _beszel_installed
+
+- name: Download and install beszel-agent
+  when: not _beszel_installed.stat.exists
+  block:
+    - name: Download beszel-agent archive
+      # Archive name pattern: beszel_agent_linux_amd64.tar.gz / beszel_agent_linux_arm64.tar.gz
+      # Verify the filename at https://github.com/henrygd/beszel/releases before upgrading.
+      ansible.builtin.get_url:
+        url: "https://github.com/henrygd/beszel/releases/download/v{{ beszel_version }}/beszel_agent_linux_{{ _beszel_arch }}.tar.gz"
+        dest: /tmp/beszel_agent.tar.gz
+        mode: "0644"
+
+    - name: Extract beszel-agent binary
+      ansible.builtin.unarchive:
+        src: /tmp/beszel_agent.tar.gz
+        dest: /usr/local/bin/
+        remote_src: true
+        include:
+          - beszel-agent
+      become: true
+
+    - name: Make beszel-agent executable
+      ansible.builtin.file:
+        path: /usr/local/bin/beszel-agent
+        mode: "0755"
+      become: true
+
+- name: Deploy beszel-agent systemd service
+  ansible.builtin.template:
+    src: beszel_agent.service.j2
+    dest: /etc/systemd/system/beszel-agent.service
+    mode: "0644"
+  become: true
+  notify: reload and restart beszel-agent
+
+- name: Enable and start beszel-agent
+  ansible.builtin.systemd:
+    name: beszel-agent.service
+    enabled: true
+    state: started
+    daemon_reload: true
+  become: true

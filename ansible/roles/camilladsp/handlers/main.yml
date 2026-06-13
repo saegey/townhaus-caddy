@@ -1,0 +1,26 @@
+---
+- name: restart camilladsp
+  ansible.builtin.systemd:
+    name: camilladsp.service
+    state: restarted
+  become: true
+
+- name: restart camillagui
+  ansible.builtin.systemd:
+    name: camillagui.service
+    state: restarted
+  become: true
+
+- name: reload and restart camilladsp
+  ansible.builtin.systemd:
+    name: camilladsp.service
+    state: restarted
+    daemon_reload: true
+  become: true
+
+- name: reload and restart camillagui
+  ansible.builtin.systemd:
+    name: camillagui.service
+    state: restarted
+    daemon_reload: true
+  become: true

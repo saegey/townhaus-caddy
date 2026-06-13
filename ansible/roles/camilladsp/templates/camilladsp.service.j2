@@ -1,0 +1,13 @@
+[Unit]
+Description=CamillaDSP
+After=sound.target
+
+[Service]
+Type=simple
+User={{ ansible_user }}
+ExecStart={{ camilladsp_install_dir }}/camilladsp -p {{ camilladsp_port }} {{ camilladsp_config_dir }}/configs/camilla.yml
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

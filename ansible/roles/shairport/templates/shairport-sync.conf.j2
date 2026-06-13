@@ -1,0 +1,36 @@
+// Managed by Ansible – edit in ansible/roles/shairport/templates/ in the monorepo.
+
+general = {
+  name = "{{ shairport_name }}";
+  interpolation = "soxr";
+  output_backend = "alsa";
+  volume_max_db = -3.0;
+  default_airplay_volume = -20.0;
+};
+
+alsa = {
+  output_device = "{{ shairport_alsa_output }}";
+};
+
+mqtt = {
+  enabled = "yes";
+  hostname = "{{ mqtt_host }}";
+  port = {{ mqtt_port }};
+  topic = "{{ shairport_mqtt_topic }}";
+  username = "{{ _mqtt_user }}";
+  password = "{{ _mqtt_pass }}";
+  publish_parsed = "{{ shairport_mqtt_publish_parsed | default('no') }}";
+  publish_cover = "{{ shairport_mqtt_publish_cover | default('no') }}";
+{% if shairport_mqtt_enable_remote is defined %}
+  enable_remote = "{{ shairport_mqtt_enable_remote }}";
+{% endif %}
+};
+
+metadata = {
+  enabled = "yes";
+  include_cover_art = "no";
+};
+
+diagnostics = {
+  log_verbosity = 1;
+};

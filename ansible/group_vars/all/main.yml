@@ -1,0 +1,18 @@
+mqtt_host: homeassistant.local
+mqtt_port: 1883
+log_level: INFO
+
+camilladsp_version: "4.1.3"
+camilladsp_samplerate: 44100
+camilladsp_chunksize: 1024
+camilladsp_format: S32_LE
+camilladsp_port: 1234
+camilladsp_install_dir: /usr/local/bin
+camilladsp_config_dir: "{{ ansible_env.HOME }}/camilladsp"
+
+camillagui_version: "4.0"
+camillagui_install_dir: "{{ ansible_env.HOME }}/camillagui"
+camillagui_port: 5005
+
+beszel_version: "0.9.3"
+beszel_agent_port: 45876

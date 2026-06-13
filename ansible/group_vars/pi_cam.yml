@@ -1,0 +1,27 @@
+aswitch_app_dir: "{{ ansible_env.HOME }}/aswitch"
+
+aswitch_services:
+  - name: dac_status
+    script: dac_status.py
+
+# 1Password secret references – resolved at deploy time with `op read`.
+aswitch_mqtt_user_ref: op://Homelab/MQTT/username
+aswitch_mqtt_pass_ref: op://Homelab/MQTT/password
+
+aswitch_env_extra:
+  DAC_USB_ID: "152a:889b"
+  DAC_MATCH_TEXT: "Fosi Audio ZD3"
+  DAC_POLL_INTERVAL_SECONDS: "5"
+  DAC_STATE_TOPIC: aswitch/dac/zd3/state
+  DAC_DETAILS_TOPIC: aswitch/dac/zd3/details
+  DAC_AVAILABILITY_TOPIC: aswitch/dac/zd3/availability
+
+shairport_name: lounge_dac
+shairport_alsa_output: "hw:Loopback,0,0"
+shairport_mqtt_topic: pi-cam/shairport
+shairport_mqtt_publish_parsed: "yes"
+shairport_mqtt_publish_cover: "yes"
+shairport_mqtt_enable_remote: "yes"
+
+camilladsp_capture_device: "hw:Loopback,1"
+camilladsp_playback_device: "plughw:CARD=ZD3,DEV=0"

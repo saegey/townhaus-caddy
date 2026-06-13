@@ -98,6 +98,30 @@ scrypted, scrypted.home.arpa {
 	reverse_proxy http://beelink.tail0bdbb0.ts.net:11080
 }
 
+# CamillaGUI on aswitch.local (DSP for audio switching Pi):
+# - https://aswitch
+# - https://aswitch.home.arpa
+aswitch, aswitch.home.arpa {
+	import common
+	reverse_proxy http://aswitch.local:5005
+}
+
+# CamillaGUI on pi-cam.local (DSP for lounge streaming Pi):
+# - https://pi-cam
+# - https://pi-cam.home.arpa
+pi-cam, pi-cam.home.arpa {
+	import common
+	reverse_proxy http://pi-cam.local:5005
+}
+
+# Beszel monitoring hub:
+# - https://beszel
+# - https://beszel.home.arpa
+beszel, beszel.home.arpa {
+	import common
+	reverse_proxy http://host.docker.internal:8090
+}
+
 # Optional alternate layout (not recommended for Frigate/HA path handling):
 # https://beelink/frigate and https://beelink/groovenet
 beelink {
