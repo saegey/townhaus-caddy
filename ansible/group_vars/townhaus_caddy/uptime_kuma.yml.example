@@ -5,6 +5,29 @@ uptime_kuma_api_url: http://192.168.2.151:3010
 uptime_kuma_user_ref: op://Homelab/Uptime/username
 uptime_kuma_pass_ref: op://Homelab/Uptime/password
 
+# Status page
+uptime_kuma_status_page:
+  slug: townhaus
+  title: Townhaus
+  description: Homelab service status
+  theme: auto
+  published: true
+  groups:
+    - name: Beelink
+      weight: 1
+      monitorList:
+        - name: Immich
+        - name: AdGuard
+        - name: Beszel
+        - name: Frigate
+        - name: Groovenet
+        - name: Home Assistant
+    - name: Audio
+      weight: 2
+      monitorList:
+        - name: aswitch
+        - name: pi-cam
+
 # Home Assistant notification — set to your HA LAN URL and 1Password ref.
 uptime_kuma_ha_url: http://192.168.1.x:8123
 uptime_kuma_ha_token_ref: op://Homelab/HomeAssistantNotifier/token
