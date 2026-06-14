@@ -1,0 +1,3 @@
+{% set usb = camilladsp_udev_usb_id.split(':') %}
+ACTION=="add", SUBSYSTEM=="usb", DEVTYPE=="usb_device", ATTR{idVendor}=="{{ usb[0] }}", ATTR{idProduct}=="{{ usb[1] }}", RUN+="/usr/bin/systemctl start --no-block camilladsp.service"
+ACTION=="remove", SUBSYSTEM=="usb", DEVTYPE=="usb_device", ATTR{idVendor}=="{{ usb[0] }}", ATTR{idProduct}=="{{ usb[1] }}", RUN+="/usr/bin/systemctl stop --no-block camilladsp.service"

@@ -25,3 +25,4 @@ shairport_mqtt_enable_remote: "yes"
 
 camilladsp_capture_device: "hw:Loopback,1"
 camilladsp_playback_device: "plughw:CARD=ZD3,DEV=0"
+camilladsp_udev_usb_id: "152a:889b"

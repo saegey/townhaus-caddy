@@ -1,4 +1,9 @@
 ---
+- name: reload udev rules
+  ansible.builtin.command: udevadm control --reload-rules
+  become: true
+  changed_when: true
+
 - name: restart camilladsp
   ansible.builtin.systemd:
     name: camilladsp.service

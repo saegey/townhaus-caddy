@@ -110,6 +110,15 @@
     mode: "0644"
   notify: restart camillagui
 
+- name: Deploy udev rule for DAC hot-plug
+  ansible.builtin.template:
+    src: camilladsp-dac.rules.j2
+    dest: /etc/udev/rules.d/99-camilladsp-dac.rules
+    mode: "0644"
+  become: true
+  when: camilladsp_udev_usb_id is defined
+  notify: reload udev rules
+
 - name: Deploy CamillaDSP systemd service
   ansible.builtin.template:
     src: camilladsp.service.j2
