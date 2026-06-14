@@ -16,6 +16,19 @@
     _uptime_kuma_pass: "{{ _uptime_kuma_creds.results[1].stdout }}"
   no_log: true
 
+- name: Remove retired monitors
+  lucasheld.uptime_kuma.monitor:
+    api_url: "{{ uptime_kuma_api_url }}"
+    api_username: "{{ _uptime_kuma_user }}"
+    api_password: "{{ _uptime_kuma_pass }}"
+    name: "{{ item }}"
+    state: absent
+  delegate_to: localhost
+  loop: "{{ uptime_kuma_monitors_absent | default([]) }}"
+  loop_control:
+    label: "{{ item }}"
+  no_log: true
+
 - name: Ensure monitors are present
   lucasheld.uptime_kuma.monitor:
     api_url: "{{ uptime_kuma_api_url }}"

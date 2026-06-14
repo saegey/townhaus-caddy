@@ -5,6 +5,10 @@ uptime_kuma_api_url: http://192.168.2.151:3010
 uptime_kuma_user_ref: op://Homelab/Uptime/username
 uptime_kuma_pass_ref: op://Homelab/Uptime/password
 
+# Monitors to remove — add names here when retiring a monitor.
+uptime_kuma_monitors_absent:
+  - Scrypted
+
 # Monitors — URLs are checked from within the Uptime Kuma container.
 # Use Docker service names for co-located containers, LAN IPs for everything else.
 uptime_kuma_monitors:
