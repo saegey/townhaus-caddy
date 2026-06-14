@@ -16,6 +16,37 @@
     _uptime_kuma_pass: "{{ _uptime_kuma_creds.results[1].stdout }}"
   no_log: true
 
+- name: Resolve Home Assistant notifier token from 1Password
+  ansible.builtin.command:
+    argv: [op, read, "{{ uptime_kuma_ha_token_ref }}"]
+  delegate_to: localhost
+  register: _ha_token_result
+  changed_when: false
+  no_log: true
+  when: uptime_kuma_ha_token_ref is defined
+
+- name: Store Home Assistant token
+  ansible.builtin.set_fact:
+    _ha_token: "{{ _ha_token_result.stdout }}"
+  no_log: true
+  when: uptime_kuma_ha_token_ref is defined
+
+- name: Ensure Home Assistant notification is configured
+  lucasheld.uptime_kuma.notification:
+    api_url: "{{ uptime_kuma_api_url }}"
+    api_username: "{{ _uptime_kuma_user }}"
+    api_password: "{{ _uptime_kuma_pass }}"
+    name: "{{ uptime_kuma_ha_notification_name | default('Home Assistant') }}"
+    type: HomeAssistant
+    isDefault: true
+    applyExisting: true
+    homeAssistantUrl: "{{ uptime_kuma_ha_url }}"
+    longLivedAccessToken: "{{ _ha_token }}"
+    state: present
+  delegate_to: localhost
+  no_log: true
+  when: uptime_kuma_ha_token_ref is defined
+
 - name: Remove retired monitors
   lucasheld.uptime_kuma.monitor:
     api_url: "{{ uptime_kuma_api_url }}"

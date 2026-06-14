@@ -5,6 +5,10 @@ uptime_kuma_api_url: http://192.168.2.151:3010
 uptime_kuma_user_ref: op://Homelab/Uptime/username
 uptime_kuma_pass_ref: op://Homelab/Uptime/password
 
+# Home Assistant notification — set to your HA LAN URL and 1Password ref.
+uptime_kuma_ha_url: http://192.168.1.x:8123
+uptime_kuma_ha_token_ref: op://Homelab/HomeAssistantNotifier/token
+
 # Monitors to remove — add names here when retiring a monitor.
 uptime_kuma_monitors_absent:
   - Scrypted
