@@ -1,5 +1,5 @@
 # Uptime Kuma API connection — port 3001 must be reachable from your control machine.
-uptime_kuma_api_url: http://192.168.2.151:3001
+uptime_kuma_api_url: http://192.168.2.151:3010
 
 # 1Password refs — item named 'Uptime' in the Homelab vault.
 uptime_kuma_user_ref: op://Homelab/Uptime/username

@@ -67,7 +67,7 @@ services:
     container_name: uptime_kuma
     restart: unless-stopped
     ports:
-      - "3001:3001"
+      - "3010:3001"
     volumes:
       - uptime_kuma_data:/app/data
     logging:
