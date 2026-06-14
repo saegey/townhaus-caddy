@@ -16,6 +16,7 @@
     - role: adguard_dns
     - role: beszel_agent
     - role: frigate
+    - role: uptime_kuma
 
 # Run the existing Docker stack playbook separately:
 #   ansible-playbook ansible/deploy.yml -i ansible/inventory.ini

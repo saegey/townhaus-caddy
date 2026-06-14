@@ -1,0 +1,33 @@
+---
+- name: Resolve Uptime Kuma credentials from 1Password
+  ansible.builtin.command:
+    argv: [op, read, "{{ item }}"]
+  delegate_to: localhost
+  loop:
+    - "{{ uptime_kuma_user_ref }}"
+    - "{{ uptime_kuma_pass_ref }}"
+  register: _uptime_kuma_creds
+  changed_when: false
+  no_log: true
+
+- name: Store Uptime Kuma credentials
+  ansible.builtin.set_fact:
+    _uptime_kuma_user: "{{ _uptime_kuma_creds.results[0].stdout }}"
+    _uptime_kuma_pass: "{{ _uptime_kuma_creds.results[1].stdout }}"
+  no_log: true
+
+- name: Ensure monitors are present
+  lucasheld.uptime_kuma.monitor:
+    api_url: "{{ uptime_kuma_api_url }}"
+    api_username: "{{ _uptime_kuma_user }}"
+    api_password: "{{ _uptime_kuma_pass }}"
+    name: "{{ item.name }}"
+    type: "{{ item.type | default('http') }}"
+    url: "{{ item.url }}"
+    interval: "{{ item.interval | default(60) }}"
+    state: present
+  delegate_to: localhost
+  loop: "{{ uptime_kuma_monitors }}"
+  loop_control:
+    label: "{{ item.name }}"
+  no_log: true

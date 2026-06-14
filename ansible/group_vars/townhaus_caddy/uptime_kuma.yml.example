@@ -1,0 +1,28 @@
+# Uptime Kuma API connection — port 3001 must be reachable from your control machine.
+uptime_kuma_api_url: http://192.168.2.151:3001
+
+# 1Password refs — item named 'Uptime' in the Homelab vault.
+uptime_kuma_user_ref: op://Homelab/Uptime/username
+uptime_kuma_pass_ref: op://Homelab/Uptime/password
+
+# Monitors — URLs are checked from within the Uptime Kuma container.
+# Use Docker service names for co-located containers, LAN IPs for everything else.
+uptime_kuma_monitors:
+  - name: Immich
+    url: http://immich-server:2283
+  - name: AdGuard
+    url: http://adguardhome:80
+  - name: Beszel
+    url: http://192.168.2.151:8090
+  - name: Frigate
+    url: http://192.168.2.151:5000
+  - name: Groovenet
+    url: http://192.168.2.151:3000
+  - name: Scrypted
+    url: http://192.168.2.151:11080
+  - name: Home Assistant
+    url: http://192.168.1.x:8123
+  - name: aswitch
+    url: http://192.168.2.170:5005
+  - name: pi-cam
+    url: http://192.168.2.171:5005
