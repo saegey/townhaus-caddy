@@ -51,7 +51,7 @@ groovenet, groovenet.home.arpa {
 # Home Assistant needs correct forwarded headers and trusted_proxies.
 ha, ha.home.arpa {
 	import common
-	reverse_proxy http://homeassistant.local:8123
+	reverse_proxy http://192.168.2.91:8123
 }
 
 # AdGuard Home admin UI:
@@ -78,12 +78,11 @@ immich, immich.home.arpa {
 # Upstream uses HTTPS on 8443 and commonly presents a self-signed cert.
 unifi, unifi.home.arpa {
 	import common
-	reverse_proxy https://homeassistant.local:8443 {
-		header_up Host homeassistant.local:8443
+	reverse_proxy https://192.168.2.91:8443 {
+		header_up Host 192.168.2.91:8443
 		header_up X-Forwarded-Host {host}
 		header_up X-Forwarded-Proto https
 		transport http {
-			tls_server_name homeassistant.local
 			tls_insecure_skip_verify
 		}
 	}
@@ -147,5 +146,5 @@ beelink {
 # https://homeassistant
 homeassistant {
 	import common
-	reverse_proxy http://homeassistant.local:8123
+	reverse_proxy http://192.168.2.91:8123
 }

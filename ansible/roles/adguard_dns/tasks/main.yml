@@ -45,7 +45,7 @@
   loop: "{{ adguard_dns_rewrites }}"
   when: >
     (_adguard_rewrites.json | selectattr('domain', 'equalto', item.domain) | list | length > 0) and
-    (_adguard_rewrites.json | selectattr('domain', 'equalto', item.domain) | list | first).answer != adguard_dns_answer
+    (_adguard_rewrites.json | selectattr('domain', 'equalto', item.domain) | list | first).answer != (item.answer | default(adguard_dns_answer))
   loop_control:
     label: "{{ item.domain }}"
 
@@ -59,11 +59,11 @@
     body_format: json
     body:
       domain: "{{ item.domain }}"
-      answer: "{{ adguard_dns_answer }}"
+      answer: "{{ item.answer | default(adguard_dns_answer) }}"
     status_code: 200
   loop: "{{ adguard_dns_rewrites }}"
   when: >
     (_adguard_rewrites.json | selectattr('domain', 'equalto', item.domain) | list | length == 0) or
-    (_adguard_rewrites.json | selectattr('domain', 'equalto', item.domain) | list | first).answer != adguard_dns_answer
+    (_adguard_rewrites.json | selectattr('domain', 'equalto', item.domain) | list | first).answer != (item.answer | default(adguard_dns_answer))
   loop_control:
     label: "{{ item.domain }}"

@@ -23,7 +23,9 @@ adguard_dns_rewrites:
   - domain: groovenet
   - domain: groovenet.home.arpa
   - domain: ha
+    answer: "192.168.2.91"
   - domain: ha.home.arpa
+    answer: "192.168.2.91"
   - domain: scrypted
   - domain: scrypted.home.arpa
   - domain: unifi
@@ -33,6 +35,10 @@ adguard_dns_rewrites:
   - domain: uptime
   - domain: uptime.home.arpa
   - domain: aswitch
+    answer: "192.168.2.170"
   - domain: aswitch.home.arpa
+    answer: "192.168.2.170"
   - domain: pi-cam
+    answer: "192.168.2.171"
   - domain: pi-cam.home.arpa
+    answer: "192.168.2.171"

@@ -84,12 +84,18 @@
         - src: ../docker-compose.yml
           dest: docker-compose.yml
           mode: "0644"
-        - src: ../Caddyfile
-          dest: Caddyfile
-          mode: "0644"
         - src: ../README.md
           dest: README.md
           mode: "0644"
+
+    - name: Copy Caddyfile
+      ansible.builtin.copy:
+        src: ../Caddyfile
+        dest: "{{ townhaus_caddy_app_dir }}/Caddyfile"
+        owner: "{{ townhaus_caddy_owner }}"
+        group: "{{ townhaus_caddy_group }}"
+        mode: "0644"
+      notify: Reload Caddy
 
     - name: Render environment file
       ansible.builtin.template:
@@ -129,20 +135,6 @@
         'Recreating' in townhaus_caddy_up_result.stdout or
         'Starting' in townhaus_caddy_up_result.stdout
 
-    - name: Reload Caddy config
-      ansible.builtin.command:
-        argv:
-          - docker
-          - exec
-          - caddy
-          - caddy
-          - reload
-          - --config
-          - /etc/caddy/Caddyfile
-          - --adapter
-          - caddyfile
-      changed_when: false
-
     - name: Show compose status
       ansible.builtin.command:
         argv:
@@ -159,3 +151,18 @@
     - name: Print compose status
       ansible.builtin.debug:
         var: townhaus_caddy_ps_result.stdout_lines
+
+  handlers:
+    - name: Reload Caddy
+      ansible.builtin.command:
+        argv:
+          - docker
+          - exec
+          - caddy
+          - caddy
+          - reload
+          - --config
+          - /etc/caddy/Caddyfile
+          - --adapter
+          - caddyfile
+      changed_when: false
