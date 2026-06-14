@@ -19,7 +19,7 @@ aswitch_env_extra:
 shairport_name: aswitch
 shairport_alsa_output: "hw:Loopback,0,0"
 shairport_mqtt_topic: aswitch/shairport
-shairport_mqtt_publish_parsed: "no"
+shairport_mqtt_publish_parsed: "yes"
 shairport_mqtt_publish_cover: "no"
 
 camilladsp_capture_device: "hw:Loopback,1"
