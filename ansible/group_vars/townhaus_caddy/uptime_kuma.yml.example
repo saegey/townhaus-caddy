@@ -18,8 +18,6 @@ uptime_kuma_monitors:
     url: http://192.168.2.151:5000
   - name: Groovenet
     url: http://192.168.2.151:3000
-  - name: Scrypted
-    url: http://192.168.2.151:11080
   - name: Home Assistant
     url: http://192.168.1.x:8123
   - name: aswitch
