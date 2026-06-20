@@ -1,29 +1,29 @@
 ---
-- name: reload udev rules
+- name: Reload Udev Rules
   ansible.builtin.command: udevadm control --reload-rules
   become: true
   changed_when: true
 
-- name: restart camilladsp
+- name: Restart Camilladsp
   ansible.builtin.systemd:
     name: camilladsp.service
     state: restarted
   become: true
 
-- name: restart camillagui
+- name: Restart Camillagui
   ansible.builtin.systemd:
     name: camillagui.service
     state: restarted
   become: true
 
-- name: reload and restart camilladsp
+- name: Reload And Restart Camilladsp
   ansible.builtin.systemd:
     name: camilladsp.service
     state: restarted
     daemon_reload: true
   become: true
 
-- name: reload and restart camillagui
+- name: Reload And Restart Camillagui
   ansible.builtin.systemd:
     name: camillagui.service
     state: restarted

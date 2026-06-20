@@ -1,0 +1,14 @@
+AWS_ACCESS_KEY_ID={{ _immich_backup_b2_key_id }}
+AWS_SECRET_ACCESS_KEY={{ _immich_backup_b2_application_key }}
+RESTIC_REPOSITORY=s3:{{ immich_backup_b2_endpoint }}/{{ immich_backup_b2_bucket }}/{{ immich_backup_b2_repository_path }}
+RESTIC_PASSWORD_FILE=/etc/immich-backup/restic-password
+RESTIC_CACHE_DIR=/var/cache/immich-backup
+IMMICH_UPLOAD_LOCATION={{ immich_backup_upload_location }}
+IMMICH_DB_CONTAINER={{ immich_backup_db_container }}
+IMMICH_DB_NAME={{ immich_backup_db_name }}
+IMMICH_DB_USERNAME={{ immich_backup_db_username }}
+IMMICH_BACKUP_HOSTNAME={{ immich_backup_hostname }}
+IMMICH_BACKUP_KEEP_DAILY={{ immich_backup_keep_daily }}
+IMMICH_BACKUP_KEEP_WEEKLY={{ immich_backup_keep_weekly }}
+IMMICH_BACKUP_KEEP_MONTHLY={{ immich_backup_keep_monthly }}
+IMMICH_BACKUP_CHECK_SUBSET={{ immich_backup_check_subset }}

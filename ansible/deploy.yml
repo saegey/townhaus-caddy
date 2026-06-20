@@ -19,7 +19,7 @@
           - op
           - --version
       delegate_to: localhost
-      run_once: true
+      when: inventory_hostname == ansible_play_hosts_all[0]
       changed_when: false
 
     - name: Resolve Immich DB password from 1Password CLI
@@ -29,7 +29,7 @@
           - read
           - "{{ townhaus_caddy_immich_db_password_ref }}"
       delegate_to: localhost
-      run_once: true
+      when: inventory_hostname == ansible_play_hosts_all[0]
       register: townhaus_caddy_immich_db_password_result
       changed_when: false
       failed_when: false
@@ -38,17 +38,23 @@
     - name: Require successful 1Password secret resolution
       ansible.builtin.assert:
         that:
-          - townhaus_caddy_immich_db_password_result.rc == 0
-          - townhaus_caddy_immich_db_password_result.stdout | length > 0
+          - hostvars[ansible_play_hosts_all[0]].townhaus_caddy_immich_db_password_result.rc == 0
+          - hostvars[ansible_play_hosts_all[0]].townhaus_caddy_immich_db_password_result.stdout | length > 0
         fail_msg: >-
           Failed to resolve townhaus_caddy_immich_db_password_ref with `op read`
           on the control machine. Verify that 1Password CLI is signed in
           (`op whoami`) and that the secret reference works locally:
           `op read "{{ townhaus_caddy_immich_db_password_ref }}"`.
 
+    - name: Store resolved Immich DB password on first host
+      ansible.builtin.set_fact:
+        townhaus_caddy_immich_db_password_shared: "{{ townhaus_caddy_immich_db_password_result.stdout }}"
+      when: inventory_hostname == ansible_play_hosts_all[0]
+      no_log: true
+
     - name: Store resolved Immich DB password
       ansible.builtin.set_fact:
-        townhaus_caddy_immich_db_password: "{{ townhaus_caddy_immich_db_password_result.stdout }}"
+        townhaus_caddy_immich_db_password: "{{ hostvars[ansible_play_hosts_all[0]].townhaus_caddy_immich_db_password_shared }}"
       no_log: true
   tasks:
     - name: Ensure app directory exists

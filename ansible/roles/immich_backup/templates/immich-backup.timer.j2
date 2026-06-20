@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the Immich offsite backup daily
+
+[Timer]
+OnCalendar={{ immich_backup_schedule }}
+Persistent=true
+RandomizedDelaySec={{ immich_backup_randomized_delay }}
+Unit=immich-backup.service
+
+[Install]
+WantedBy=timers.target

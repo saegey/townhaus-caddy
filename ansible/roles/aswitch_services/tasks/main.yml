@@ -4,7 +4,7 @@
     argv: [op, read, "{{ aswitch_mqtt_user_ref }}"]
   delegate_to: localhost
   run_once: false
-  register: _mqtt_user_result
+  register: aswitch_services_mqtt_user_result
   changed_when: false
   no_log: true
 
@@ -13,14 +13,14 @@
     argv: [op, read, "{{ aswitch_mqtt_pass_ref }}"]
   delegate_to: localhost
   run_once: false
-  register: _mqtt_pass_result
+  register: aswitch_services_mqtt_pass_result
   changed_when: false
   no_log: true
 
 - name: Store resolved MQTT credentials
   ansible.builtin.set_fact:
-    _mqtt_user: "{{ _mqtt_user_result.stdout }}"
-    _mqtt_pass: "{{ _mqtt_pass_result.stdout }}"
+    aswitch_services_mqtt_user: "{{ aswitch_services_mqtt_user_result.stdout }}"
+    aswitch_services_mqtt_pass: "{{ aswitch_services_mqtt_pass_result.stdout }}"
   no_log: true
 
 - name: Ensure app directory exists
@@ -35,14 +35,14 @@
     dest: "{{ aswitch_app_dir }}/{{ item | basename }}"
     mode: "0644"
   loop: "{{ lookup('fileglob', playbook_dir + '/../../services/aswitch/*.py', wantlist=True) }}"
-  notify: restart aswitch services
+  notify: Restart Aswitch Services
 
 - name: Sync requirements.txt
   ansible.builtin.copy:
     src: "{{ playbook_dir }}/../../services/aswitch/requirements.txt"
     dest: "{{ aswitch_app_dir }}/requirements.txt"
     mode: "0644"
-  notify: install aswitch deps
+  notify: Install Aswitch Deps
 
 - name: Create virtualenv and install dependencies
   ansible.builtin.pip:
@@ -56,7 +56,7 @@
     dest: "{{ aswitch_app_dir }}/.env"
     mode: "0600"
   no_log: true
-  notify: restart aswitch services
+  notify: Restart Aswitch Services
 
 - name: Deploy systemd service units
   ansible.builtin.template:
@@ -65,7 +65,7 @@
     mode: "0644"
   loop: "{{ aswitch_services }}"
   become: true
-  notify: reload and restart aswitch services
+  notify: Reload And Restart Aswitch Services
 
 - name: Enable and start services
   ansible.builtin.systemd:

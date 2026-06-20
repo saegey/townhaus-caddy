@@ -1,0 +1,23 @@
+---
+immich_backup_enabled: true
+
+# Use the S3 endpoint shown for the bucket in Backblaze. Bucket names must be
+# globally unique, so replace this example name.
+immich_backup_b2_endpoint: s3.us-west-004.backblazeb2.com
+immich_backup_b2_bucket: townhaus-immich-backup-CHANGE-ME
+immich_backup_b2_repository_path: restic
+
+# Create a bucket-restricted Backblaze application key with read/write access.
+# The Restic password must be independently generated and retained; backups
+# cannot be restored without it.
+immich_backup_b2_key_id_ref: op://Homelab/Backblaze Immich/key_id
+immich_backup_b2_application_key_ref: op://Homelab/Backblaze Immich/application_key
+immich_backup_restic_password_ref: op://Homelab/Backblaze Immich/restic_password
+
+# Daily backup, weekly integrity sampling, and snapshot retention.
+immich_backup_schedule: "*-*-* 03:30:00"
+immich_backup_check_schedule: "Sun *-*-* 05:00:00"
+immich_backup_check_subset: "5%"
+immich_backup_keep_daily: 7
+immich_backup_keep_weekly: 5
+immich_backup_keep_monthly: 12

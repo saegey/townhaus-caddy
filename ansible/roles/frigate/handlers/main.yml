@@ -1,5 +1,5 @@
 ---
-- name: restart frigate
+- name: Restart Frigate
   ansible.builtin.command:
     argv: [docker, restart, frigate]
   become: true

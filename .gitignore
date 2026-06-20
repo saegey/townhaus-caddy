@@ -3,6 +3,7 @@ ansible/group_vars/townhaus_caddy.yml
 ansible/group_vars/townhaus_caddy/main.yml
 ansible/group_vars/townhaus_caddy/beszel.yml
 ansible/group_vars/townhaus_caddy/frigate.yml
+ansible/group_vars/townhaus_caddy/immich_backup.yml
 ansible/host_vars/localhost.yml
 ansible/group_vars/townhaus_caddy/uptime_kuma.yml
 ansible/group_vars/aswitch_secrets.yml
@@ -12,3 +13,4 @@ certs/
 data/
 services/aswitch/env/*.env
 !services/aswitch/env/*.example.env
+.DS_Store

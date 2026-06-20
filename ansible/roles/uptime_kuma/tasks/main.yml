@@ -6,42 +6,42 @@
   loop:
     - "{{ uptime_kuma_user_ref }}"
     - "{{ uptime_kuma_pass_ref }}"
-  register: _uptime_kuma_creds
+  register: uptime_kuma_creds_result
   changed_when: false
   no_log: true
 
 - name: Store Uptime Kuma credentials
   ansible.builtin.set_fact:
-    _uptime_kuma_user: "{{ _uptime_kuma_creds.results[0].stdout }}"
-    _uptime_kuma_pass: "{{ _uptime_kuma_creds.results[1].stdout }}"
+    uptime_kuma_user: "{{ uptime_kuma_creds_result.results[0].stdout }}"
+    uptime_kuma_pass: "{{ uptime_kuma_creds_result.results[1].stdout }}"
   no_log: true
 
 - name: Resolve Home Assistant notifier token from 1Password
   ansible.builtin.command:
     argv: [op, read, "{{ uptime_kuma_ha_token_ref }}"]
   delegate_to: localhost
-  register: _ha_token_result
+  register: uptime_kuma_ha_token_result
   changed_when: false
   no_log: true
   when: uptime_kuma_ha_token_ref is defined
 
 - name: Store Home Assistant token
   ansible.builtin.set_fact:
-    _ha_token: "{{ _ha_token_result.stdout }}"
+    uptime_kuma_ha_token: "{{ uptime_kuma_ha_token_result.stdout }}"
   no_log: true
   when: uptime_kuma_ha_token_ref is defined
 
 - name: Ensure Home Assistant notification is configured
   lucasheld.uptime_kuma.notification:
     api_url: "{{ uptime_kuma_api_url }}"
-    api_username: "{{ _uptime_kuma_user }}"
-    api_password: "{{ _uptime_kuma_pass }}"
+    api_username: "{{ uptime_kuma_user }}"
+    api_password: "{{ uptime_kuma_pass }}"
     name: "{{ uptime_kuma_ha_notification_name | default('Home Assistant') }}"
     type: HomeAssistant
     isDefault: true
     applyExisting: true
     homeAssistantUrl: "{{ uptime_kuma_ha_url }}"
-    longLivedAccessToken: "{{ _ha_token }}"
+    longLivedAccessToken: "{{ uptime_kuma_ha_token }}"
     state: present
   delegate_to: localhost
   no_log: true
@@ -50,8 +50,8 @@
 - name: Ensure status page exists
   lucasheld.uptime_kuma.status_page:
     api_url: "{{ uptime_kuma_api_url }}"
-    api_username: "{{ _uptime_kuma_user }}"
-    api_password: "{{ _uptime_kuma_pass }}"
+    api_username: "{{ uptime_kuma_user }}"
+    api_password: "{{ uptime_kuma_pass }}"
     slug: "{{ uptime_kuma_status_page.slug }}"
     title: "{{ uptime_kuma_status_page.title }}"
     description: "{{ uptime_kuma_status_page.description | default('') }}"
@@ -67,8 +67,8 @@
 - name: Remove retired monitors
   lucasheld.uptime_kuma.monitor:
     api_url: "{{ uptime_kuma_api_url }}"
-    api_username: "{{ _uptime_kuma_user }}"
-    api_password: "{{ _uptime_kuma_pass }}"
+    api_username: "{{ uptime_kuma_user }}"
+    api_password: "{{ uptime_kuma_pass }}"
     name: "{{ item }}"
     state: absent
   delegate_to: localhost
@@ -80,8 +80,8 @@
 - name: Ensure monitors are present
   lucasheld.uptime_kuma.monitor:
     api_url: "{{ uptime_kuma_api_url }}"
-    api_username: "{{ _uptime_kuma_user }}"
-    api_password: "{{ _uptime_kuma_pass }}"
+    api_username: "{{ uptime_kuma_user }}"
+    api_password: "{{ uptime_kuma_pass }}"
     name: "{{ item.name }}"
     type: "{{ item.type | default('http') }}"
     url: "{{ item.url }}"

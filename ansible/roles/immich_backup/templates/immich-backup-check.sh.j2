@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+restic check --read-data-subset="${IMMICH_BACKUP_CHECK_SUBSET:-5%}"

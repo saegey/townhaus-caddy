@@ -3,7 +3,7 @@
   ansible.builtin.command:
     argv: [op, read, "{{ aswitch_mqtt_user_ref }}"]
   delegate_to: localhost
-  register: _mqtt_user_result
+  register: shairport_mqtt_user_result
   changed_when: false
   no_log: true
 
@@ -11,14 +11,14 @@
   ansible.builtin.command:
     argv: [op, read, "{{ aswitch_mqtt_pass_ref }}"]
   delegate_to: localhost
-  register: _mqtt_pass_result
+  register: shairport_mqtt_pass_result
   changed_when: false
   no_log: true
 
 - name: Store resolved MQTT credentials
   ansible.builtin.set_fact:
-    _mqtt_user: "{{ _mqtt_user_result.stdout }}"
-    _mqtt_pass: "{{ _mqtt_pass_result.stdout }}"
+    shairport_mqtt_user: "{{ shairport_mqtt_user_result.stdout }}"
+    shairport_mqtt_pass: "{{ shairport_mqtt_pass_result.stdout }}"
   no_log: true
 
 - name: Deploy shairport-sync config
@@ -27,4 +27,4 @@
     dest: /etc/shairport-sync.conf
     mode: "0644"
   become: true
-  notify: restart shairport-sync
+  notify: Restart Shairport-Sync
