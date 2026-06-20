@@ -97,7 +97,7 @@ AirPlay source → Shairport Sync → ALSA Loopback → CamillaDSP → USB DAC �
 ## Prerequisites
 
 ```bash
-brew install ansible 1password-cli
+brew install ansible 1password-cli just
 ansible-galaxy collection install -r ansible/requirements.yml
 op signin
 ```
@@ -120,6 +120,7 @@ cp ansible/group_vars/townhaus_caddy/beszel.yml.example ansible/group_vars/townh
 | Item | Fields |
 |---|---|
 | `Immich Database` | `password` |
+| `Backblaze Immich` | `key_id`, `application_key`, `restic_password` |
 | `MQTT` | `username`, `password` |
 | `AdGuard` | `username`, `password` |
 | `Frigate` | `mqtt_password`, `doorbell_rtsp_url`, `doorbell_talk_rtsp_url`, `backyard_rtsp_url`, `backyard_rtsp_sub_url`, `homekit_pin` |
@@ -127,18 +128,25 @@ cp ansible/group_vars/townhaus_caddy/beszel.yml.example ansible/group_vars/townh
 ## Deploying
 
 ```bash
-# beelink — Docker stack
-ansible-playbook ansible/deploy.yml
+# Show every available command
+just
 
-# beelink — AdGuard DNS rewrites + Beszel agent
-ansible-playbook ansible/playbooks/beelink.yml --ask-become-pass
+# Deploy the Docker stack and host roles on beelink
+just deploy-beelink
 
-# aswitch Pi
-ansible-playbook ansible/playbooks/aswitch.yml --ask-become-pass
+# Deploy either Pi
+just deploy-aswitch
+just deploy-pi-cam
 
-# pi-cam Pi
-ansible-playbook ansible/playbooks/pi_cam.yml --ask-become-pass
+# Deploy all hosts
+just deploy
+
+# Validate playbook syntax and the working diff
+just check
 ```
+
+The lower-level `just deploy-stack` and `just configure-beelink` recipes are
+available when only the Compose stack or host roles need to change.
 
 ## CamillaDSP presets
 
@@ -168,9 +176,83 @@ cp ansible/group_vars/townhaus_caddy/frigate.yml.example ansible/group_vars/town
 # Edit frigate.yml — set frigate_mqtt_host, email, and 1Password refs
 
 # Deploy config + start container
-ansible-playbook ansible/playbooks/beelink.yml --ask-become-pass
-ansible-playbook ansible/deploy.yml
+just deploy-beelink
 ```
+
+## Immich backups
+
+Immich is backed up to a private Backblaze B2 bucket with Restic. The backup
+role creates a fresh compressed PostgreSQL dump first, then takes an encrypted,
+deduplicated snapshot of both the dump and the complete
+`IMMICH_UPLOAD_LOCATION`. It retains 7 daily, 5 weekly, and 12 monthly
+snapshots. A weekly repository check reads and verifies 5% of the stored data.
+
+The role is opt-in. To configure it:
+
+1. Create a private B2 bucket and note its S3 endpoint. Set its lifecycle rule
+   to **Keep only the last version of the file**; Restic manages backup history.
+   Do not enable Object Lock because it prevents Restic from pruning snapshots.
+2. Create an application key restricted to that bucket with read/write access.
+3. Create a `Backblaze Immich` item in the `Homelab` 1Password vault with
+   `key_id`, `application_key`, and a separately generated `restic_password`.
+   Keep that Restic password permanently; the repository cannot be recovered
+   without it. From zsh, create the item without placing secrets in shell
+   history or command arguments:
+
+   ```zsh
+   read "B2_KEY_ID?Backblaze application key ID: "
+   read -s "B2_APPLICATION_KEY?Backblaze application key: " && printf '\n'
+   RESTIC_PASSWORD="$(openssl rand -base64 48)"
+
+   op item create --category "Secure Note" --vault Homelab - <<EOF
+   {
+     "title": "Backblaze Immich",
+     "fields": [
+       {"label": "key_id", "type": "CONCEALED", "value": "$B2_KEY_ID"},
+       {"label": "application_key", "type": "CONCEALED", "value": "$B2_APPLICATION_KEY"},
+       {"label": "restic_password", "type": "CONCEALED", "value": "$RESTIC_PASSWORD"}
+     ]
+   }
+   EOF
+
+   unset B2_KEY_ID B2_APPLICATION_KEY RESTIC_PASSWORD
+   ```
+
+   Verify that all three references resolve without revealing their values:
+
+   ```bash
+   for field in key_id application_key restic_password; do
+     op read "op://Homelab/Backblaze Immich/$field" >/dev/null || exit 1
+   done
+   echo "Backblaze Immich credentials are available"
+   ```
+
+4. Copy and edit the variables file:
+
+   ```bash
+   cp ansible/group_vars/townhaus_caddy/immich_backup.yml.example \
+     ansible/group_vars/townhaus_caddy/immich_backup.yml
+   ```
+
+5. Deploy the host roles and run the first backup manually:
+
+   ```bash
+   just deploy-beelink
+   just immich-backup
+   just immich-backup-logs
+   ```
+
+The daily backup runs around 03:30 local time and the integrity check runs
+weekly. Inspect the schedules and most recent result with:
+
+```bash
+just immich-backup-status
+```
+
+For a restore, recover both `/srv/storage/immich/library` and
+`/var/lib/immich-backup/immich-database.sql.gz` from the same Restic snapshot,
+then follow Immich's database restore procedure. Test this process before
+treating the backup as production-ready.
 
 ## AdGuard DNS
 
@@ -204,17 +286,17 @@ sudo update-ca-certificates
 
 ```bash
 # Reload Caddy config without downtime
-docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
+just caddy-reload
 
 # Follow logs
-docker compose logs -f caddy
-docker compose logs -f adguardhome
-docker compose logs -f immich-server
-docker compose logs -f beszel-hub
+just logs caddy
+just logs adguardhome
+just logs immich-server
+just logs beszel-hub
 
 # Check Pi service status
-ssh saegey@aswitch.local "systemctl status camilladsp camillagui shairport-sync aswitch audio_activity"
-ssh saegey@pi-cam.local "systemctl status camilladsp camillagui shairport-sync dac_status"
+just status-aswitch
+just status-pi-cam
 ```
 
 ## Home Assistant reverse proxy

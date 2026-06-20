@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+umask 077
+
+readonly dump_path=/var/lib/immich-backup/immich-database.sql.gz
+dump_tmp="$(mktemp /var/lib/immich-backup/.immich-database.sql.gz.XXXXXX)"
+trap 'rm -f "$dump_tmp"' EXIT
+
+for variable in \
+  RESTIC_REPOSITORY RESTIC_PASSWORD_FILE IMMICH_UPLOAD_LOCATION \
+  IMMICH_DB_CONTAINER IMMICH_DB_NAME IMMICH_DB_USERNAME; do
+  if [[ -z "${!variable:-}" ]]; then
+    echo "Required environment variable is unset: $variable" >&2
+    exit 1
+  fi
+done
+
+if [[ ! -d "$IMMICH_UPLOAD_LOCATION" ]]; then
+  echo "Immich upload location does not exist: $IMMICH_UPLOAD_LOCATION" >&2
+  exit 1
+fi
+
+echo "Creating Immich database dump"
+docker exec "$IMMICH_DB_CONTAINER" pg_dump \
+  --clean \
+  --if-exists \
+  --dbname="$IMMICH_DB_NAME" \
+  --username="$IMMICH_DB_USERNAME" \
+  | gzip -c > "$dump_tmp"
+
+if [[ ! -s "$dump_tmp" ]]; then
+  echo "Immich database dump is empty" >&2
+  exit 1
+fi
+mv "$dump_tmp" "$dump_path"
+
+if ! restic cat config >/dev/null 2>&1; then
+  echo "Initializing Restic repository"
+  restic init
+fi
+
+echo "Backing up the database dump and Immich upload location"
+restic backup \
+  --host "${IMMICH_BACKUP_HOSTNAME:-beelink}" \
+  --tag immich \
+  "$dump_path" \
+  "$IMMICH_UPLOAD_LOCATION"
+
+echo "Applying Restic retention policy"
+restic forget \
+  --host "${IMMICH_BACKUP_HOSTNAME:-beelink}" \
+  --tag immich \
+  --keep-daily "${IMMICH_BACKUP_KEEP_DAILY:-7}" \
+  --keep-weekly "${IMMICH_BACKUP_KEEP_WEEKLY:-5}" \
+  --keep-monthly "${IMMICH_BACKUP_KEEP_MONTHLY:-12}" \
+  --prune

@@ -1,0 +1,30 @@
+---
+immich_backup_enabled: false
+
+immich_backup_upload_location: >-
+  {{ townhaus_caddy_env.IMMICH_UPLOAD_LOCATION | default('/srv/storage/immich/library') }}
+immich_backup_db_container: immich_postgres
+immich_backup_db_name: >-
+  {{ townhaus_caddy_env.IMMICH_DB_DATABASE_NAME | default('immich') }}
+immich_backup_db_username: >-
+  {{ townhaus_caddy_env.IMMICH_DB_USERNAME | default('postgres') }}
+immich_backup_hostname: beelink
+
+# B2's S3 endpoint is region-specific, for example:
+# s3.us-west-004.backblazeb2.com
+immich_backup_b2_endpoint: ""
+immich_backup_b2_bucket: ""
+immich_backup_b2_repository_path: restic
+
+immich_backup_b2_key_id_ref: ""
+immich_backup_b2_application_key_ref: ""
+immich_backup_restic_password_ref: ""
+
+immich_backup_schedule: "*-*-* 03:30:00"
+immich_backup_check_schedule: "Sun *-*-* 05:00:00"
+immich_backup_check_subset: "5%"
+immich_backup_randomized_delay: 15m
+
+immich_backup_keep_daily: 7
+immich_backup_keep_weekly: 5
+immich_backup_keep_monthly: 12

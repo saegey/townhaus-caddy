@@ -1,2 +1,8 @@
 [townhaus_caddy]
 beelink ansible_host=beelink ansible_user=saegey
+
+[aswitch]
+aswitch_host ansible_host=aswitch.local ansible_user=saegey
+
+[pi_cam]
+pi_cam_host ansible_host=pi-cam.local ansible_user=saegey

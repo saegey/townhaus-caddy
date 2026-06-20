@@ -1,0 +1,118 @@
+---
+- name: Configure Immich offsite backups
+  when: immich_backup_enabled | bool
+  block:
+    - name: Validate Immich backup configuration
+      ansible.builtin.assert:
+        that:
+          - immich_backup_b2_endpoint | length > 0
+          - immich_backup_b2_bucket | length > 0
+          - immich_backup_b2_key_id_ref | length > 0
+          - immich_backup_b2_application_key_ref | length > 0
+          - immich_backup_restic_password_ref | length > 0
+        fail_msg: >-
+          Immich backup is enabled, but its B2 bucket, endpoint, or 1Password
+          references are missing. See
+          ansible/group_vars/townhaus_caddy/immich_backup.yml.example.
+
+    - name: Resolve Immich backup secrets from 1Password
+      ansible.builtin.command:
+        argv:
+          - op
+          - read
+          - "{{ item }}"
+      delegate_to: localhost
+      loop:
+        - "{{ immich_backup_b2_key_id_ref }}"
+        - "{{ immich_backup_b2_application_key_ref }}"
+        - "{{ immich_backup_restic_password_ref }}"
+      register: _immich_backup_secrets
+      changed_when: false
+      no_log: true
+
+    - name: Store resolved Immich backup secrets
+      ansible.builtin.set_fact:
+        _immich_backup_b2_key_id: "{{ _immich_backup_secrets.results[0].stdout | trim }}"
+        _immich_backup_b2_application_key: "{{ _immich_backup_secrets.results[1].stdout | trim }}"
+        _immich_backup_restic_password: "{{ _immich_backup_secrets.results[2].stdout }}"
+      no_log: true
+
+    - name: Install Restic
+      ansible.builtin.apt:
+        name: restic
+        state: present
+        update_cache: true
+        cache_valid_time: 86400
+      become: true
+
+    - name: Create Immich backup directories
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "{{ item.mode }}"
+      become: true
+      loop:
+        - { path: /etc/immich-backup, mode: "0700" }
+        - { path: /var/lib/immich-backup, mode: "0700" }
+        - { path: /var/cache/immich-backup, mode: "0700" }
+
+    - name: Write Immich backup environment
+      ansible.builtin.template:
+        src: environment.j2
+        dest: /etc/immich-backup/environment
+        owner: root
+        group: root
+        mode: "0600"
+      become: true
+      no_log: true
+
+    - name: Write Restic repository password
+      ansible.builtin.copy:
+        content: "{{ _immich_backup_restic_password }}\n"
+        dest: /etc/immich-backup/restic-password
+        owner: root
+        group: root
+        mode: "0600"
+      become: true
+      no_log: true
+
+    - name: Install Immich backup scripts
+      ansible.builtin.template:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        owner: root
+        group: root
+        mode: "0750"
+      become: true
+      loop:
+        - src: immich-backup.sh.j2
+          dest: /usr/local/sbin/immich-backup
+        - src: immich-backup-check.sh.j2
+          dest: /usr/local/sbin/immich-backup-check
+
+    - name: Install Immich backup systemd units
+      ansible.builtin.template:
+        src: "{{ item }}.j2"
+        dest: "/etc/systemd/system/{{ item }}"
+        owner: root
+        group: root
+        mode: "0644"
+      become: true
+      loop:
+        - immich-backup.service
+        - immich-backup.timer
+        - immich-backup-check.service
+        - immich-backup-check.timer
+
+    - name: Enable Immich backup timers
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        enabled: true
+        state: started
+        daemon_reload: true
+      become: true
+      loop:
+        - immich-backup.timer
+        - immich-backup-check.timer
