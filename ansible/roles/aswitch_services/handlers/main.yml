@@ -1,18 +1,18 @@
 ---
-- name: install aswitch deps
+- name: Install Aswitch Deps
   ansible.builtin.pip:
     requirements: "{{ aswitch_app_dir }}/requirements.txt"
     virtualenv: "{{ aswitch_app_dir }}/.venv"
     virtualenv_command: python3 -m venv
 
-- name: restart aswitch services
+- name: Restart Aswitch Services
   ansible.builtin.systemd:
     name: "{{ item.name }}.service"
     state: restarted
   loop: "{{ aswitch_services }}"
   become: true
 
-- name: reload and restart aswitch services
+- name: Reload And Restart Aswitch Services
   ansible.builtin.systemd:
     name: "{{ item.name }}.service"
     state: restarted

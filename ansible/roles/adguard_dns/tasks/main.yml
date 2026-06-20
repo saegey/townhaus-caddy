@@ -10,42 +10,42 @@
   loop:
     - { ref: "{{ adguard_user_ref }}", var: user }
     - { ref: "{{ adguard_pass_ref }}", var: pass }
-  register: _adguard_creds
+  register: adguard_dns_creds_result
   changed_when: false
   no_log: true
 
 - name: Store AdGuard credentials
   ansible.builtin.set_fact:
-    _adguard_user: "{{ _adguard_creds.results[0].stdout }}"
-    _adguard_pass: "{{ _adguard_creds.results[1].stdout }}"
+    adguard_dns_user: "{{ adguard_dns_creds_result.results[0].stdout }}"
+    adguard_dns_pass: "{{ adguard_dns_creds_result.results[1].stdout }}"
   no_log: true
 
 - name: Fetch current DNS rewrites
   ansible.builtin.uri:
     url: "http://localhost:{{ adguard_admin_port }}/control/rewrite/list"
     method: GET
-    url_username: "{{ _adguard_user }}"
-    url_password: "{{ _adguard_pass }}"
+    url_username: "{{ adguard_dns_user }}"
+    url_password: "{{ adguard_dns_pass }}"
     force_basic_auth: true
     return_content: true
-  register: _adguard_rewrites
+  register: adguard_dns_rewrites_result
 
 - name: Delete rewrites with wrong answer
   ansible.builtin.uri:
     url: "http://localhost:{{ adguard_admin_port }}/control/rewrite/delete"
     method: POST
-    url_username: "{{ _adguard_user }}"
-    url_password: "{{ _adguard_pass }}"
+    url_username: "{{ adguard_dns_user }}"
+    url_password: "{{ adguard_dns_pass }}"
     force_basic_auth: true
     body_format: json
     body:
       domain: "{{ item.domain }}"
-      answer: "{{ (_adguard_rewrites.json | selectattr('domain', 'equalto', item.domain) | list | first).answer }}"
+      answer: "{{ (adguard_dns_rewrites_result.json | selectattr('domain', 'equalto', item.domain) | list | first).answer }}"
     status_code: 200
   loop: "{{ adguard_dns_rewrites }}"
   when: >
-    (_adguard_rewrites.json | selectattr('domain', 'equalto', item.domain) | list | length > 0) and
-    (_adguard_rewrites.json | selectattr('domain', 'equalto', item.domain) | list | first).answer != (item.answer | default(adguard_dns_answer))
+    (adguard_dns_rewrites_result.json | selectattr('domain', 'equalto', item.domain) | list | length > 0) and
+    (adguard_dns_rewrites_result.json | selectattr('domain', 'equalto', item.domain) | list | first).answer != (item.answer | default(adguard_dns_answer))
   loop_control:
     label: "{{ item.domain }}"
 
@@ -53,8 +53,8 @@
   ansible.builtin.uri:
     url: "http://localhost:{{ adguard_admin_port }}/control/rewrite/add"
     method: POST
-    url_username: "{{ _adguard_user }}"
-    url_password: "{{ _adguard_pass }}"
+    url_username: "{{ adguard_dns_user }}"
+    url_password: "{{ adguard_dns_pass }}"
     force_basic_auth: true
     body_format: json
     body:
@@ -63,7 +63,7 @@
     status_code: 200
   loop: "{{ adguard_dns_rewrites }}"
   when: >
-    (_adguard_rewrites.json | selectattr('domain', 'equalto', item.domain) | list | length == 0) or
-    (_adguard_rewrites.json | selectattr('domain', 'equalto', item.domain) | list | first).answer != (item.answer | default(adguard_dns_answer))
+    (adguard_dns_rewrites_result.json | selectattr('domain', 'equalto', item.domain) | list | length == 0) or
+    (adguard_dns_rewrites_result.json | selectattr('domain', 'equalto', item.domain) | list | first).answer != (item.answer | default(adguard_dns_answer))
   loop_control:
     label: "{{ item.domain }}"

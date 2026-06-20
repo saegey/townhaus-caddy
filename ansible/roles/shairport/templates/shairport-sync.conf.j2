@@ -17,8 +17,8 @@ mqtt = {
   hostname = "{{ mqtt_host }}";
   port = {{ mqtt_port }};
   topic = "{{ shairport_mqtt_topic }}";
-  username = "{{ _mqtt_user }}";
-  password = "{{ _mqtt_pass }}";
+  username = "{{ shairport_mqtt_user }}";
+  password = "{{ shairport_mqtt_pass }}";
   publish_parsed = "{{ shairport_mqtt_publish_parsed | default('no') }}";
   publish_cover = "{{ shairport_mqtt_publish_cover | default('no') }}";
 {% if shairport_mqtt_enable_remote is defined %}

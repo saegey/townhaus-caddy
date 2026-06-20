@@ -14,14 +14,14 @@
 
 - name: Check installed CamillaDSP version
   ansible.builtin.command: "{{ camilladsp_install_dir }}/camilladsp --version"
-  register: _cdsp_installed_version
+  register: camilladsp_installed_version
   changed_when: false
   failed_when: false
 
 - name: Download and install CamillaDSP binary
   when: >
-    _cdsp_installed_version.rc != 0 or
-    camilladsp_version not in _cdsp_installed_version.stdout
+    camilladsp_installed_version.rc != 0 or
+    camilladsp_version not in camilladsp_installed_version.stdout
   block:
     - name: Download CamillaDSP archive
       ansible.builtin.get_url:
@@ -47,10 +47,10 @@
 - name: Check installed CamillaGUI version
   ansible.builtin.stat:
     path: "{{ camillagui_install_dir }}/camillagui_backend/camillagui_backend"
-  register: _cgui_stat
+  register: camilladsp_camillagui_stat
 
 - name: Download and install CamillaGUI bundle
-  when: not _cgui_stat.stat.exists
+  when: not camilladsp_camillagui_stat.stat.exists
   block:
     - name: Ensure CamillaGUI directory exists
       ansible.builtin.file:
@@ -94,7 +94,7 @@
     - relaxed.yml
     - tonecontrol.yml
     - warm.yml
-  notify: restart camilladsp
+  notify: Restart Camilladsp
 
 - name: Initialize CamillaDSP statefile if absent
   ansible.builtin.copy:
@@ -108,7 +108,7 @@
     src: camillagui.yml.j2
     dest: "{{ camillagui_install_dir }}/camillagui.yml"
     mode: "0644"
-  notify: restart camillagui
+  notify: Restart Camillagui
 
 - name: Deploy udev rule for DAC hot-plug
   ansible.builtin.template:
@@ -117,7 +117,7 @@
     mode: "0644"
   become: true
   when: camilladsp_udev_usb_id is defined
-  notify: reload udev rules
+  notify: Reload Udev Rules
 
 - name: Deploy CamillaDSP systemd service
   ansible.builtin.template:
@@ -125,7 +125,7 @@
     dest: /etc/systemd/system/camilladsp.service
     mode: "0644"
   become: true
-  notify: reload and restart camilladsp
+  notify: Reload And Restart Camilladsp
 
 - name: Deploy CamillaGUI systemd service
   ansible.builtin.template:
@@ -133,7 +133,7 @@
     dest: /etc/systemd/system/camillagui.service
     mode: "0644"
   become: true
-  notify: reload and restart camillagui
+  notify: Reload And Restart Camillagui
 
 - name: Enable and start CamillaDSP
   ansible.builtin.systemd:

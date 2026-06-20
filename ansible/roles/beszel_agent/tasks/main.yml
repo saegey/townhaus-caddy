@@ -1,21 +1,21 @@
 ---
 - name: Set architecture-specific asset name
   ansible.builtin.set_fact:
-    _beszel_arch: "{{ 'amd64' if ansible_architecture == 'x86_64' else 'arm64' }}"
+    beszel_agent_arch: "{{ 'amd64' if ansible_architecture == 'x86_64' else 'arm64' }}"
 
 - name: Check if beszel-agent is installed
   ansible.builtin.stat:
     path: /usr/local/bin/beszel-agent
-  register: _beszel_installed
+  register: beszel_agent_installed
 
 - name: Download and install beszel-agent
-  when: not _beszel_installed.stat.exists
+  when: not beszel_agent_installed.stat.exists
   block:
     - name: Download beszel-agent archive
       # Archive name pattern: beszel_agent_linux_amd64.tar.gz / beszel_agent_linux_arm64.tar.gz
       # Verify the filename at https://github.com/henrygd/beszel/releases before upgrading.
       ansible.builtin.get_url:
-        url: "https://github.com/henrygd/beszel/releases/download/v{{ beszel_version }}/beszel-agent_linux_{{ _beszel_arch }}.tar.gz"
+        url: "https://github.com/henrygd/beszel/releases/download/v{{ beszel_version }}/beszel-agent_linux_{{ beszel_agent_arch }}.tar.gz"
         dest: /tmp/beszel_agent.tar.gz
         mode: "0644"
 
@@ -47,27 +47,27 @@
       - -c
       - apk add -q openssh-keygen && ssh-keygen -y -f /data/id_ed25519
   delegate_to: "{{ beszel_hub_host }}"
-  register: _beszel_pubkey_result
+  register: beszel_agent_pubkey_result
   changed_when: false
 
 - name: Store Beszel Hub public key
   ansible.builtin.set_fact:
-    _beszel_pubkey: "{{ _beszel_pubkey_result.stdout | trim }}"
+    beszel_agent_pubkey: "{{ beszel_agent_pubkey_result.stdout | trim }}"
 
 - name: Authorize Beszel Hub SSH key on agent
   ansible.posix.authorized_key:
     user: "{{ ansible_user }}"
-    key: "{{ _beszel_pubkey }}"
+    key: "{{ beszel_agent_pubkey }}"
     comment: beszel-hub
     state: present
 
 - name: Write Beszel Hub public key file for agent
   ansible.builtin.copy:
-    content: "{{ _beszel_pubkey }}\n"
+    content: "{{ beszel_agent_pubkey }}\n"
     dest: /etc/beszel-hub.pub
     mode: "0644"
   become: true
-  notify: reload and restart beszel-agent
+  notify: Reload And Restart Beszel-Agent
 
 - name: Deploy beszel-agent systemd service
   ansible.builtin.template:
@@ -75,7 +75,7 @@
     dest: /etc/systemd/system/beszel-agent.service
     mode: "0644"
   become: true
-  notify: reload and restart beszel-agent
+  notify: Reload And Restart Beszel-Agent
 
 - name: Enable and start beszel-agent
   ansible.builtin.systemd:

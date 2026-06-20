@@ -45,4 +45,4 @@
     mode: "0644"
   become: true
   no_log: true
-  notify: restart frigate
+  notify: Restart Frigate

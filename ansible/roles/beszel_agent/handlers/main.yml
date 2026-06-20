@@ -1,5 +1,5 @@
 ---
-- name: reload and restart beszel-agent
+- name: Reload And Restart Beszel-Agent
   ansible.builtin.systemd:
     name: beszel-agent.service
     state: restarted
