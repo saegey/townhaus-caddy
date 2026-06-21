@@ -7,9 +7,14 @@ beelink_app_dir := "/srv/docker/townhaus-caddy"
 default:
     @just --list
 
-# Install required Ansible collections.
+# Install Python packages required by Ansible collections (uses mise Python from host_vars/localhost.yml).
+pip-deps:
+    mise which python3 | xargs -I{} {} -m pip install uptime-kuma-api
+
+# Install required Ansible collections and Python packages.
 dependencies:
     ansible-galaxy collection install -r ansible/requirements.yml
+    just pip-deps
 
 # Validate every Ansible playbook without contacting a host.
 syntax-check:
@@ -82,6 +87,15 @@ logs service:
 # Reload Caddy without restarting its container.
 caddy-reload:
     ssh {{ beelink }} "cd {{ beelink_app_dir }} && docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile"
+
+# Mount beelink music library for local GrooveNET dev (macOS).
+mount-music:
+    sudo mkdir -p /Volumes/music
+    sudo mount -t nfs -o resvport,ro beelink.local:/srv/music /Volumes/music
+
+# Unmount beelink music library.
+unmount-music:
+    sudo umount /Volumes/music
 
 # Show audio services on aswitch.
 status-aswitch:

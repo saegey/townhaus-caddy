@@ -2,6 +2,8 @@ mqtt_host: homeassistant.local
 mqtt_port: 1883
 log_level: INFO
 
+ansible_shell_executable: /bin/bash
+
 remote_home: "/home/{{ ansible_user }}"
 
 camilladsp_version: "4.1.3"

@@ -1,0 +1,106 @@
+---
+- name: Skip dotfiles role when disabled
+  ansible.builtin.meta: end_role
+  when: not dotfiles_enabled | bool
+
+- name: Require Debian-family hosts for dotfiles role
+  ansible.builtin.assert:
+    that:
+      - ansible_os_family == "Debian"
+    fail_msg: "The dotfiles role currently supports Debian-family hosts only."
+
+- name: Install dotfiles prerequisites
+  ansible.builtin.apt:
+    name: "{{ dotfiles_packages }}"
+    state: present
+    update_cache: true
+  become: true
+  when: dotfiles_manage_packages | bool
+
+- name: Ensure dotfiles parent directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0700"
+  loop:
+    - "{{ remote_home }}/.config"
+    - "{{ remote_home }}/.ssh"
+
+- name: Clone dotfiles repository
+  ansible.builtin.git:
+    repo: "{{ dotfiles_repo }}"
+    dest: "{{ dotfiles_dest }}"
+    version: "{{ dotfiles_version }}"
+    accept_hostkey: "{{ dotfiles_accept_hostkey }}"
+    single_branch: "{{ dotfiles_single_branch }}"
+    depth: "{{ dotfiles_depth }}"
+    update: true
+    force: "{{ dotfiles_force }}"
+
+- name: Check for pre-existing dotfile conflicts
+  ansible.builtin.stat:
+    path: "{{ remote_home }}/{{ item }}"
+  loop: "{{ dotfiles_conflicting_targets }}"
+  register: dotfiles_conflicting_target_stats
+
+- name: Ensure dotfiles backup directory exists when needed
+  ansible.builtin.file:
+    path: "{{ dotfiles_backup_dir }}"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0700"
+  when: >
+    dotfiles_conflicting_target_stats.results
+    | selectattr('stat.exists')
+    | rejectattr('stat.islnk')
+    | list
+    | length > 0
+
+- name: Back up pre-existing dotfile conflicts
+  ansible.builtin.command:
+    argv:
+      - mv
+      - "{{ remote_home }}/{{ item.item }}"
+      - "{{ dotfiles_backup_dir }}/{{ item.item | basename }}"
+  loop: "{{ dotfiles_conflicting_target_stats.results }}"
+  when:
+    - item.stat.exists
+    - not item.stat.islnk
+  changed_when: true
+
+- name: Unstow disabled dotfile packages
+  ansible.builtin.command:
+    argv:
+      - stow
+      - --delete
+      - "--target={{ remote_home }}"
+      - "{{ item }}"
+  args:
+    chdir: "{{ dotfiles_dest }}"
+  loop: "{{ dotfiles_unstow_packages }}"
+  register: dotfiles_unstow_result
+  changed_when: false
+  failed_when: false
+
+- name: Apply dotfiles with stow
+  ansible.builtin.command:
+    argv:
+      - stow
+      - --restow
+      - "--target={{ remote_home }}"
+      - "{{ item }}"
+  args:
+    chdir: "{{ dotfiles_dest }}"
+  loop: "{{ dotfiles_stow_packages }}"
+  register: dotfiles_stow_result
+  changed_when: false
+
+- name: Set default shell to zsh
+  ansible.builtin.user:
+    name: "{{ ansible_user }}"
+    shell: "{{ dotfiles_default_shell }}"
+  become: true
+  when: dotfiles_set_default_shell | bool

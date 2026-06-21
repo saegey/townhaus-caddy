@@ -22,6 +22,8 @@
           - read
           - "{{ item }}"
       delegate_to: localhost
+      vars:
+        ansible_python_interpreter: "{{ ansible_playbook_python }}"
       loop:
         - "{{ immich_backup_b2_key_id_ref }}"
         - "{{ immich_backup_b2_application_key_ref }}"

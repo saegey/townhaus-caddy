@@ -1,0 +1,50 @@
+---
+dotfiles_enabled: false
+
+dotfiles_repo: https://github.com/saegey/dotfiles.git
+dotfiles_version: HEAD
+dotfiles_dest: "{{ remote_home }}/.dotfiles"
+dotfiles_accept_hostkey: true
+dotfiles_single_branch: true
+dotfiles_depth: 1
+dotfiles_force: false
+
+dotfiles_packages:
+  - git
+  - stow
+  - curl
+  - wget
+  - htop
+  - zsh
+  - zoxide
+  - sudo
+  - lsd
+  - direnv
+
+dotfiles_manage_packages: true
+
+dotfiles_stow_packages:
+  - zsh
+  - bash
+  - git
+  - npm
+  - starship
+  - ghostty
+  - zed
+  - tools
+  - ssh
+  - claude
+
+dotfiles_unstow_packages: []
+
+dotfiles_backup_dir: "{{ remote_home }}/.dotfiles-pre-ansible-backup-{{ ansible_date_time.iso8601_basic_short }}"
+dotfiles_conflicting_targets:
+  - .bashrc
+  - .bash_profile
+  - .gitconfig
+  - .gitignore
+  - .zshrc
+  - .ssh/config
+
+dotfiles_set_default_shell: true
+dotfiles_default_shell: /usr/bin/zsh
