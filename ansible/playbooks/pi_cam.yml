@@ -8,6 +8,7 @@
       ansible.builtin.blockinfile:
         path: "{{ remote_home }}/.bashrc"
         create: true
+        mode: "0644"
         insertbefore: BOF
         marker: "# {mark} ANSIBLE NONINTERACTIVE BASH GUARD"
         block: |
