@@ -148,6 +148,38 @@ just check
 The lower-level `just deploy-stack` and `just configure-beelink` recipes are
 available when only the Compose stack or host roles need to change.
 
+## Dotfiles
+
+Linux hosts can optionally install your dotfiles repo into `~/.dotfiles` and
+apply the Stow-managed files into the target user's home directory.
+
+The Ansible role is opt-in and assumes Debian-family hosts. It installs the
+required packages, clones the repo, runs `stow --restow` for the configured
+packages, and can set the user's default shell to `zsh`.
+
+To enable it for a host group, add variables to the relevant group vars file:
+
+```yaml
+dotfiles_enabled: true
+dotfiles_repo: https://github.com/saegey/dotfiles.git
+```
+
+For example:
+
+- `ansible/group_vars/aswitch.yml`
+- `ansible/group_vars/pi_cam.yml`
+- `ansible/group_vars/townhaus_caddy/main.yml`
+
+Because the repo is public, the default uses HTTPS and does not require SSH
+keys on the target hosts. The clone is also shallow by default (`depth: 1`,
+single branch) because the hosts only need the current dotfiles tree, not full
+history.
+
+The role intentionally does not run the dotfiles repo's interactive bootstrap
+scripts. Those scripts call `sudo` internally, which does not compose cleanly
+with Ansible's privilege escalation. The role applies the Stow-managed files
+directly and installs the Debian-side prerequisites itself.
+
 ## CamillaDSP presets
 
 Seven EQ presets are managed in `ansible/roles/camilladsp/templates/configs/` and deployed to both Pis. The ALSA capture/playback devices are set per-host in `group_vars`:
@@ -204,16 +236,13 @@ The role is opt-in. To configure it:
    read -s "B2_APPLICATION_KEY?Backblaze application key: " && printf '\n'
    RESTIC_PASSWORD="$(openssl rand -base64 48)"
 
-   op item create --category "Secure Note" --vault Homelab - <<EOF
-   {
-     "title": "Backblaze Immich",
-     "fields": [
-       {"label": "key_id", "type": "CONCEALED", "value": "$B2_KEY_ID"},
-       {"label": "application_key", "type": "CONCEALED", "value": "$B2_APPLICATION_KEY"},
-       {"label": "restic_password", "type": "CONCEALED", "value": "$RESTIC_PASSWORD"}
-     ]
-   }
-   EOF
+   op item create \
+     --category "Secure Note" \
+     --title "Backblaze Immich" \
+     --vault Homelab \
+     "key_id[concealed]=$B2_KEY_ID" \
+     "application_key[concealed]=$B2_APPLICATION_KEY" \
+     "restic_password[concealed]=$RESTIC_PASSWORD"
 
    unset B2_KEY_ID B2_APPLICATION_KEY RESTIC_PASSWORD
    ```

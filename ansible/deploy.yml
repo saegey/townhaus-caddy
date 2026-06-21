@@ -19,6 +19,8 @@
           - op
           - --version
       delegate_to: localhost
+      vars:
+        ansible_python_interpreter: "{{ ansible_playbook_python }}"
       when: inventory_hostname == ansible_play_hosts_all[0]
       changed_when: false
 
@@ -29,6 +31,8 @@
           - read
           - "{{ townhaus_caddy_immich_db_password_ref }}"
       delegate_to: localhost
+      vars:
+        ansible_python_interpreter: "{{ ansible_playbook_python }}"
       when: inventory_hostname == ansible_play_hosts_all[0]
       register: townhaus_caddy_immich_db_password_result
       changed_when: false

@@ -1,0 +1,54 @@
+---
+- name: Install NFS server and rsync
+  ansible.builtin.apt:
+    name:
+      - nfs-kernel-server
+      - rsync
+    state: present
+    update_cache: true
+  become: true
+
+- name: Ensure /srv/music exists
+  ansible.builtin.file:
+    path: "{{ nfs_music_path }}"
+    state: directory
+    owner: "{{ townhaus_caddy_owner }}"
+    group: "{{ townhaus_caddy_group }}"
+    mode: "0755"
+  become: true
+
+- name: Ensure /etc/exports.d exists
+  ansible.builtin.file:
+    path: /etc/exports.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  become: true
+
+- name: Export /srv/music read-only to LAN
+  ansible.builtin.copy:
+    dest: /etc/exports.d/music.exports
+    content: "{{ nfs_music_path }}{% for net in nfs_allowed_networks %} {{ net }}(ro,sync,no_subtree_check){% endfor %}\n"
+    owner: root
+    group: root
+    mode: "0644"
+  become: true
+  notify: Re-export NFS shares
+
+- name: Allow saegey to run rsync without password
+  ansible.builtin.copy:
+    content: "saegey ALL=(ALL) NOPASSWD: /usr/bin/rsync\n"
+    dest: /etc/sudoers.d/rsync-saegey
+    owner: root
+    group: root
+    mode: "0440"
+    validate: /usr/sbin/visudo -cf %s
+  become: true
+
+- name: Enable and start nfs-server
+  ansible.builtin.systemd:
+    name: nfs-server
+    enabled: true
+    state: started
+  become: true

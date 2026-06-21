@@ -4,10 +4,25 @@
   gather_facts: true
 
   pre_tasks:
+    - name: Guard bash startup for non-interactive Ansible sessions
+      ansible.builtin.blockinfile:
+        path: "{{ remote_home }}/.bashrc"
+        create: true
+        mode: "0644"
+        insertbefore: BOF
+        marker: "# {mark} ANSIBLE NONINTERACTIVE BASH GUARD"
+        block: |
+          case $- in
+            *i*) ;;
+            *) return ;;
+          esac
+
     - name: Verify 1Password CLI is available
       ansible.builtin.command:
         argv: [op, --version]
       delegate_to: localhost
+      vars:
+        ansible_python_interpreter: "{{ ansible_playbook_python }}"
       when: inventory_hostname == ansible_play_hosts_all[0]
       changed_when: false
 
@@ -16,3 +31,4 @@
     - role: camilladsp
     - role: aswitch_services
     - role: beszel_agent
+    - role: dotfiles

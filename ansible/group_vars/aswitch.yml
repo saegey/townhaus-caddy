@@ -1,5 +1,21 @@
 aswitch_app_dir: "{{ remote_home }}/aswitch"
 
+dotfiles_enabled: true
+dotfiles_manage_packages: false
+dotfiles_set_default_shell: false
+dotfiles_stow_packages:
+  - zsh
+  - git
+  - npm
+  - starship
+  - ghostty
+  - zed
+  - tools
+  - ssh
+  - claude
+dotfiles_unstow_packages:
+  - bash
+
 aswitch_services:
   - name: aswitch
     script: aswitch.py

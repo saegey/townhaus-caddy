@@ -3,7 +3,7 @@
 # before running the beelink playbook.
 
 # MQTT broker host for Frigate — use LAN hostname or IP.
-frigate_mqtt_host: homeassistant.local
+frigate_mqtt_host: 192.168.2.91
 frigate_mqtt_user: frigate
 
 # Email for Frigate push notifications.

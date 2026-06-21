@@ -3,6 +3,8 @@
   ansible.builtin.command:
     argv: [op, read, "{{ aswitch_mqtt_user_ref }}"]
   delegate_to: localhost
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
   register: shairport_mqtt_user_result
   changed_when: false
   no_log: true
@@ -11,6 +13,8 @@
   ansible.builtin.command:
     argv: [op, read, "{{ aswitch_mqtt_pass_ref }}"]
   delegate_to: localhost
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
   register: shairport_mqtt_pass_result
   changed_when: false
   no_log: true

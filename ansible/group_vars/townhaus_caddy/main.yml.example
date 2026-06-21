@@ -2,6 +2,8 @@ townhaus_caddy_app_dir: /srv/docker/townhaus-caddy
 townhaus_caddy_owner: saegey
 townhaus_caddy_group: saegey
 
+dotfiles_enabled: false
+
 townhaus_caddy_compose_project_name: townhaus-caddy
 townhaus_caddy_pull_images: true
 
@@ -9,6 +11,11 @@ townhaus_caddy_pull_images: true
 # Example: op://Homelab/Immich Database/password
 # Replace this placeholder before running the playbook.
 townhaus_caddy_immich_db_password_ref: op://Vault/Item/field
+
+nfs_music_path: /srv/music
+nfs_allowed_networks:
+  - 192.168.2.0/24
+  - 100.64.0.0/10
 
 townhaus_caddy_env:
   CADDY_HTTP_PORT: "80"
