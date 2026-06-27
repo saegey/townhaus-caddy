@@ -1,0 +1,10 @@
+[Unit]
+Description=Periodically recover CamillaDSP if the playback DAC is present
+
+[Timer]
+OnBootSec=15s
+OnUnitActiveSec={{ camilladsp_recover_interval }}
+Unit=camilladsp-recover.service
+
+[Install]
+WantedBy=timers.target

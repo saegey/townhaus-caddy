@@ -119,6 +119,14 @@
   when: camilladsp_udev_usb_id is defined
   notify: Reload Udev Rules
 
+- name: Deploy CamillaDSP recovery helper
+  ansible.builtin.template:
+    src: camilladsp-recover.sh.j2
+    dest: /usr/local/sbin/camilladsp-recover
+    mode: "0755"
+  become: true
+  when: camilladsp_recover_enabled
+
 - name: Deploy CamillaDSP systemd service
   ansible.builtin.template:
     src: camilladsp.service.j2
@@ -126,6 +134,22 @@
     mode: "0644"
   become: true
   notify: Reload And Restart Camilladsp
+
+- name: Deploy CamillaDSP recovery systemd service
+  ansible.builtin.template:
+    src: camilladsp-recover.service.j2
+    dest: /etc/systemd/system/camilladsp-recover.service
+    mode: "0644"
+  become: true
+  when: camilladsp_recover_enabled
+
+- name: Deploy CamillaDSP recovery timer
+  ansible.builtin.template:
+    src: camilladsp-recover.timer.j2
+    dest: /etc/systemd/system/camilladsp-recover.timer
+    mode: "0644"
+  become: true
+  when: camilladsp_recover_enabled
 
 - name: Deploy CamillaGUI systemd service
   ansible.builtin.template:
@@ -142,6 +166,15 @@
     state: started
     daemon_reload: true
   become: true
+
+- name: Enable and start CamillaDSP recovery timer
+  ansible.builtin.systemd:
+    name: camilladsp-recover.timer
+    enabled: true
+    state: started
+    daemon_reload: true
+  become: true
+  when: camilladsp_recover_enabled
 
 - name: Enable and start CamillaGUI
   ansible.builtin.systemd:

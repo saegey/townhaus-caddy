@@ -29,6 +29,15 @@
 	}
 }
 
+# Internal landing page:
+# - https://start
+# - https://start.home.arpa
+start, start.home.arpa {
+	import common
+	root * /srv/portal
+	file_server
+}
+
 # Frigate: dual endpoints for desktop/iOS compatibility:
 # - https://frigate
 # - https://frigate.home.arpa
@@ -86,15 +95,6 @@ unifi, unifi.home.arpa {
 			tls_insecure_skip_verify
 		}
 	}
-}
-
-# Scrypted UI:
-# - https://scrypted
-# - https://scrypted.home.arpa
-# Upstream is reached via MagicDNS host on HTTP 11080.
-scrypted, scrypted.home.arpa {
-	import common
-	reverse_proxy http://host.docker.internal:11080
 }
 
 # CamillaGUI on aswitch.local (DSP for audio switching Pi):

@@ -14,6 +14,8 @@ adguard_dns_answer: "192.168.1.x"
 # Declarative list of DNS rewrites to maintain in AdGuard.
 # Both the short name and the .home.arpa variant are needed for iOS/macOS compatibility.
 adguard_dns_rewrites:
+  - domain: start
+  - domain: start.home.arpa
   - domain: adguard
   - domain: adguard.home.arpa
   - domain: immich
@@ -26,8 +28,6 @@ adguard_dns_rewrites:
     answer: "192.168.2.91"
   - domain: ha.home.arpa
     answer: "192.168.2.91"
-  - domain: scrypted
-  - domain: scrypted.home.arpa
   - domain: unifi
   - domain: unifi.home.arpa
   - domain: beszel

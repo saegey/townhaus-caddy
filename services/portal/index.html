@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Townhaus</title>
+    <style>
+      :root {
+        --bg: #f2efe8;
+        --paper: rgba(255, 251, 244, 0.82);
+        --paper-strong: rgba(255, 251, 244, 0.94);
+        --line: rgba(50, 37, 22, 0.12);
+        --text: #20160e;
+        --muted: #665747;
+        --accent: #0f6b61;
+        --accent-strong: #0a4b45;
+        --shadow: 0 24px 80px rgba(55, 41, 18, 0.12);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at top left, rgba(15, 107, 97, 0.18), transparent 28rem),
+          radial-gradient(circle at top right, rgba(166, 92, 32, 0.18), transparent 26rem),
+          linear-gradient(180deg, #f8f4ed 0%, var(--bg) 100%);
+      }
+
+      .shell {
+        width: min(1100px, calc(100% - 2rem));
+        margin: 0 auto;
+        padding: 3rem 0 4rem;
+      }
+
+      .hero {
+        padding: 2.25rem;
+        border: 1px solid var(--line);
+        border-radius: 1.75rem;
+        background: var(--paper);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(10px);
+      }
+
+      .eyebrow {
+        margin: 0 0 0.75rem;
+        font-size: 0.8rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(2.5rem, 6vw, 4.8rem);
+        line-height: 0.95;
+        letter-spacing: -0.05em;
+        max-width: 9ch;
+      }
+
+      .hero p {
+        max-width: 42rem;
+        margin: 1rem 0 0;
+        font-size: 1.05rem;
+        line-height: 1.7;
+        color: var(--muted);
+      }
+
+      .grid {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        margin-top: 1.5rem;
+      }
+
+      .card {
+        display: block;
+        padding: 1.15rem 1.15rem 1.25rem;
+        text-decoration: none;
+        color: inherit;
+        border-radius: 1.25rem;
+        border: 1px solid var(--line);
+        background: var(--paper-strong);
+        box-shadow: 0 10px 30px rgba(55, 41, 18, 0.08);
+        transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+      }
+
+      .card:hover,
+      .card:focus-visible {
+        transform: translateY(-2px);
+        border-color: rgba(15, 107, 97, 0.32);
+        box-shadow: 0 14px 32px rgba(15, 107, 97, 0.12);
+        outline: none;
+      }
+
+      .card strong {
+        display: block;
+        font-size: 1.15rem;
+        margin-bottom: 0.35rem;
+      }
+
+      .card span {
+        display: block;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .url {
+        margin-top: 0.9rem;
+        font-size: 0.88rem;
+        color: var(--accent-strong);
+      }
+
+      .section {
+        margin-top: 2rem;
+      }
+
+      .section h2 {
+        margin: 0 0 0.85rem;
+        font-size: 1rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      @media (max-width: 720px) {
+        .shell {
+          width: min(100% - 1rem, 1100px);
+          padding-top: 1rem;
+        }
+
+        .hero {
+          padding: 1.4rem;
+          border-radius: 1.25rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <p class="eyebrow">Townhaus Internal</p>
+        <h1>Home services, one front door.</h1>
+        <p>
+          A simple index for the apps and devices already routed through Caddy on the beelink.
+          Use the short internal hostnames or the cards below.
+        </p>
+      </section>
+
+      <section class="section">
+        <h2>Core Apps</h2>
+        <div class="grid">
+          <a class="card" href="https://ha">
+            <strong>Home Assistant</strong>
+            <span>Automation, dashboards, and the center of the house.</span>
+            <span class="url">https://ha</span>
+          </a>
+          <a class="card" href="https://frigate">
+            <strong>Frigate</strong>
+            <span>Cameras, detections, NVR playback, and go2rtc-connected streams.</span>
+            <span class="url">https://frigate</span>
+          </a>
+          <a class="card" href="https://immich">
+            <strong>Immich</strong>
+            <span>Photo library, uploads, search, and timeline browsing.</span>
+            <span class="url">https://immich</span>
+          </a>
+          <a class="card" href="https://groovenet">
+            <strong>Groovenet</strong>
+            <span>Music streaming and playback services hosted on the main box.</span>
+            <span class="url">https://groovenet</span>
+          </a>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>Infra</h2>
+        <div class="grid">
+          <a class="card" href="https://adguard">
+            <strong>AdGuard</strong>
+            <span>DNS administration, rewrites, filtering, and client visibility.</span>
+            <span class="url">https://adguard</span>
+          </a>
+          <a class="card" href="https://unifi">
+            <strong>UniFi</strong>
+            <span>Network controller, access points, and infrastructure state.</span>
+            <span class="url">https://unifi</span>
+          </a>
+          <a class="card" href="https://uptime">
+            <strong>Uptime Kuma</strong>
+            <span>Health checks and alerting for internal services and devices.</span>
+            <span class="url">https://uptime</span>
+          </a>
+          <a class="card" href="https://beszel">
+            <strong>Beszel</strong>
+            <span>Host monitoring and node-level telemetry across the homelab.</span>
+            <span class="url">https://beszel</span>
+          </a>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>Audio Nodes</h2>
+        <div class="grid">
+          <a class="card" href="https://aswitch">
+            <strong>aswitch</strong>
+            <span>CamillaGUI and the audio switching Pi for source routing and DSP.</span>
+            <span class="url">https://aswitch</span>
+          </a>
+          <a class="card" href="https://pi-cam">
+            <strong>pi-cam</strong>
+            <span>CamillaGUI and the lounge streaming Pi for AirPlay and DAC output.</span>
+            <span class="url">https://pi-cam</span>
+          </a>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

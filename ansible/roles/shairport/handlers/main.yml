@@ -1,6 +1,6 @@
 ---
 - name: Restart Shairport-Sync
   ansible.builtin.systemd:
-    name: shairport-sync.service
+    name: "{{ shairport_service_name }}"
     state: restarted
   become: true
