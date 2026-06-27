@@ -1,0 +1,18 @@
+#!/bin/sh
+# Block until the CamillaDSP playback ALSA card appears in /proc/asound/cards.
+# Called as ExecStartPre so CamillaDSP never races against a card that is not
+# yet initialised after USB enumeration.
+set -eu
+
+CARD="{{ camilladsp_playback_card_name }}"
+TIMEOUT=15
+i=0
+
+while [ "$i" -lt "$TIMEOUT" ]; do
+    grep -Fq "[$CARD" /proc/asound/cards && exit 0
+    sleep 1
+    i=$((i + 1))
+done
+
+echo "camilladsp-wait-alsa: timed out after ${TIMEOUT}s waiting for ALSA card $CARD" >&2
+exit 1

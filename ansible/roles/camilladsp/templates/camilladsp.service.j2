@@ -5,9 +5,14 @@ After=sound.target
 [Service]
 Type=simple
 User={{ ansible_user }}
+{% if camilladsp_playback_card_name is defined %}
+ExecStartPre=/usr/local/sbin/camilladsp-wait-alsa
+{% endif %}
 ExecStart={{ camilladsp_install_dir }}/camilladsp -p {{ camilladsp_port }} {{ camilladsp_config_dir }}/configs/camilla.yml
 Restart={{ 'on-failure' if camilladsp_udev_usb_id is defined else 'always' }}
 RestartSec=5
+StartLimitIntervalSec=60
+StartLimitBurst=3
 
 [Install]
 WantedBy=multi-user.target
