@@ -1,4 +1,32 @@
 ---
+- name: Derive effective Shairport cover art setting
+  ansible.builtin.set_fact:
+    shairport_effective_metadata_include_cover_art: >-
+      {{
+        shairport_metadata_include_cover_art
+        | default(
+            'yes' if (shairport_mqtt_publish_cover | default('no') | lower) in ['yes', 'true', 'on', '1']
+            else 'no'
+          )
+      }}
+
+- name: Validate Shairport metadata settings
+  ansible.builtin.assert:
+    that:
+      - >
+        (shairport_mqtt_publish_cover | default('no') | lower) not in ['yes', 'true', 'on', '1']
+        or (shairport_effective_metadata_include_cover_art | lower) in ['yes', 'true', 'on', '1']
+    fail_msg: >-
+      shairport_mqtt_publish_cover requires cover art metadata. Set
+      shairport_metadata_include_cover_art to "yes" or disable
+      shairport_mqtt_publish_cover.
+
+- name: Ensure Shairport Sync is installed
+  ansible.builtin.apt:
+    name: "{{ shairport_package_name }}"
+    state: present
+  become: true
+
 - name: Resolve MQTT username from 1Password
   ansible.builtin.command:
     argv: [op, read, "{{ aswitch_mqtt_user_ref }}"]
@@ -32,3 +60,10 @@
     mode: "0644"
   become: true
   notify: Restart Shairport-Sync
+
+- name: Enable and start Shairport Sync
+  ansible.builtin.systemd:
+    name: "{{ shairport_service_name }}"
+    enabled: true
+    state: started
+  become: true

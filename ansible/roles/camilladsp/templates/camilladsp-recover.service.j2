@@ -1,0 +1,8 @@
+[Unit]
+Description=Recover CamillaDSP when the playback DAC is available
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/camilladsp-recover

@@ -27,8 +27,8 @@ mqtt = {
 };
 
 metadata = {
-  enabled = "yes";
-  include_cover_art = "no";
+  enabled = "{{ shairport_metadata_enabled }}";
+  include_cover_art = "{{ shairport_effective_metadata_include_cover_art }}";
 };
 
 diagnostics = {

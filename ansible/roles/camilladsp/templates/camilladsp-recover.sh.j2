@@ -1,0 +1,13 @@
+#!/bin/sh
+set -eu
+
+if systemctl --quiet is-active camilladsp.service; then
+  exit 0
+fi
+
+if ! grep -Fq "[{{ camilladsp_playback_card_name }}" /proc/asound/cards; then
+  exit 0
+fi
+
+echo "camilladsp-recover: starting camilladsp.service for ALSA card {{ camilladsp_playback_card_name }}"
+exec /usr/bin/systemctl start camilladsp.service

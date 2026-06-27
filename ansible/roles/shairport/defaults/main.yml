@@ -1,0 +1,4 @@
+---
+shairport_package_name: shairport-sync
+shairport_service_name: shairport-sync.service
+shairport_metadata_enabled: "yes"

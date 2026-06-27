@@ -1,0 +1,5 @@
+---
+aswitch_services_source_files:
+  - "{{ playbook_dir }}/../../services/aswitch/aswitch.py"
+  - "{{ playbook_dir }}/../../services/aswitch/audio_activity.py"
+  - "{{ playbook_dir }}/../../services/aswitch/dac_status.py"

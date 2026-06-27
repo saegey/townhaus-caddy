@@ -40,3 +40,4 @@ shairport_mqtt_publish_cover: "no"
 
 camilladsp_capture_device: "hw:Loopback,1"
 camilladsp_playback_device: "plughw:CARD=AUDIO,DEV=0"
+camilladsp_playback_card_name: AUDIO

@@ -38,7 +38,7 @@
     src: "{{ item }}"
     dest: "{{ aswitch_app_dir }}/{{ item | basename }}"
     mode: "0644"
-  loop: "{{ lookup('fileglob', playbook_dir + '/../../services/aswitch/*.py', wantlist=True) }}"
+  loop: "{{ aswitch_services_source_files }}"
   notify: Restart Aswitch Services
 
 - name: Sync requirements.txt
