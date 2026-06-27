@@ -98,6 +98,24 @@
           dest: README.md
           mode: "0644"
 
+    - name: Ensure portal directory exists
+      ansible.builtin.file:
+        path: "{{ townhaus_caddy_app_dir }}/services/portal"
+        state: directory
+        owner: "{{ townhaus_caddy_owner }}"
+        group: "{{ townhaus_caddy_group }}"
+        mode: "0755"
+      become: true
+
+    - name: Copy portal assets
+      ansible.builtin.copy:
+        src: ../services/portal/
+        dest: "{{ townhaus_caddy_app_dir }}/services/portal/"
+        owner: "{{ townhaus_caddy_owner }}"
+        group: "{{ townhaus_caddy_group }}"
+        mode: preserve
+      become: true
+
     - name: Copy Caddyfile
       ansible.builtin.copy:
         src: ../Caddyfile

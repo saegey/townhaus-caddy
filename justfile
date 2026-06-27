@@ -30,7 +30,7 @@ check:
 
 # Deploy the Docker Compose stack to beelink.
 deploy-stack:
-    ansible-playbook ansible/deploy.yml
+    ansible-playbook ansible/deploy.yml --ask-become-pass
 
 # Apply beelink host roles, including backup timers and service configuration.
 configure-beelink:
