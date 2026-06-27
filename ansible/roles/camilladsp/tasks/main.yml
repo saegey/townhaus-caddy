@@ -128,6 +128,14 @@
   when: camilladsp_udev_usb_id is defined
   notify: Reload Udev Rules
 
+- name: Deploy CamillaDSP ALSA readiness wait script
+  ansible.builtin.template:
+    src: camilladsp-wait-alsa.sh.j2
+    dest: /usr/local/sbin/camilladsp-wait-alsa
+    mode: "0755"
+  become: true
+  when: camilladsp_playback_card_name is defined
+
 - name: Deploy CamillaDSP recovery helper
   ansible.builtin.template:
     src: camilladsp-recover.sh.j2
