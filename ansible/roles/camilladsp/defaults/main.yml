@@ -1,3 +1,4 @@
 ---
 camilladsp_recover_enabled: "{{ camilladsp_playback_card_name is defined }}"
 camilladsp_recover_interval: "30s"
+camilladsp_mqtt_control_enabled: false

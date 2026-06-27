@@ -20,6 +20,7 @@ MQTT_CLIENT_ID = os.environ.get("DAC_MQTT_CLIENT_ID", "aswitch-dac-status")
 DAC_STATE_TOPIC = os.environ.get("DAC_STATE_TOPIC", "aswitch/dac/zd3/state")
 DAC_DETAILS_TOPIC = os.environ.get("DAC_DETAILS_TOPIC", "aswitch/dac/zd3/details")
 DAC_AVAILABILITY_TOPIC = os.environ.get("DAC_AVAILABILITY_TOPIC", "aswitch/dac/zd3/availability")
+DAC_COMMAND_TOPIC = os.environ.get("DAC_COMMAND_TOPIC", "")
 
 
 def normalize_lines(output):
@@ -59,12 +60,33 @@ class DacStatusPublisher:
         client.will_set(DAC_AVAILABILITY_TOPIC, "offline", retain=True)
         client.on_connect = self.on_connect
         client.on_disconnect = self.on_disconnect
+        client.on_message = self.on_message
         client.reconnect_delay_set(min_delay=1, max_delay=30)
         return client
 
     def on_connect(self, client, userdata, flags, reason_code, properties):
         self.logger.info("Connected to MQTT: reason_code=%s", reason_code)
         self.publish_availability("online")
+        if DAC_COMMAND_TOPIC:
+            client.subscribe(DAC_COMMAND_TOPIC)
+            self.logger.info("Subscribed to command topic: %s", DAC_COMMAND_TOPIC)
+
+    def on_message(self, client, userdata, msg):
+        payload = msg.payload.decode(errors="ignore").strip().lower()
+        self.logger.info("Command %s -> %s", msg.topic, payload)
+        if payload == "start":
+            self._trigger_camilladsp()
+
+    def _trigger_camilladsp(self):
+        self.logger.info("Triggering camilladsp.service start")
+        result = subprocess.run(
+            ["sudo", "systemctl", "start", "--no-block", "camilladsp.service"],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0:
+            self.logger.warning("systemctl start failed: %s", result.stderr.strip())
 
     def on_disconnect(self, client, userdata, disconnect_flags, reason_code, properties):
         if self._stop.is_set():

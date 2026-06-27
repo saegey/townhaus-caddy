@@ -172,6 +172,9 @@ Amp on  -> ~+12V
 | `aswitch/dac/zd3/state` | state (retained) | `connected`, `disconnected` |
 | `aswitch/dac/zd3/details` | state (retained) | matching `lsusb` line |
 | `aswitch/dac/zd3/availability` | availability (retained) | `online`, `offline` |
+| `aswitch/dac/zd3/command` | command | `start` |
+
+Publishing `start` to the command topic immediately triggers `systemctl start camilladsp.service`, bypassing the 30-second recovery timer. Intended for use from a Home Assistant automation when AirPlay playback begins — see [`home_assistant/camilladsp_trigger.yaml`](home_assistant/camilladsp_trigger.yaml).
 
 ## Home Assistant Integration
 
@@ -230,6 +233,7 @@ Tracked automations:
 - [`home_assistant/amp_automation.yaml`](home_assistant/amp_automation.yaml) — amp auto-power from mixer audio activity
 - [`home_assistant/zd3_auto_power.yaml`](home_assistant/zd3_auto_power.yaml) — ZD3 auto power/input from lounge streamer
 - [`home_assistant/shairport_sync_example.yaml`](home_assistant/shairport_sync_example.yaml) — AirPlay trigger example
+- [`home_assistant/camilladsp_trigger.yaml`](home_assistant/camilladsp_trigger.yaml) — proactively start CamillaDSP when AirPlay begins
 
 ## Audio Activity Detector
 
@@ -281,6 +285,7 @@ DAC_POLL_INTERVAL_SECONDS=5
 DAC_STATE_TOPIC=aswitch/dac/zd3/state
 DAC_DETAILS_TOPIC=aswitch/dac/zd3/details
 DAC_AVAILABILITY_TOPIC=aswitch/dac/zd3/availability
+DAC_COMMAND_TOPIC=aswitch/dac/zd3/command
 ```
 
 ## Shairport Sync
