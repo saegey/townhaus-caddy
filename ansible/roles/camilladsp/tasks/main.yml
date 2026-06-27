@@ -110,6 +110,15 @@
     mode: "0644"
   notify: Restart Camillagui
 
+- name: Deploy sudoers rule for MQTT-triggered camilladsp start
+  ansible.builtin.template:
+    src: camilladsp-sudoers.j2
+    dest: /etc/sudoers.d/camilladsp-control
+    mode: "0440"
+    validate: "visudo -cf %s"
+  become: true
+  when: camilladsp_mqtt_control_enabled
+
 - name: Deploy udev rule for DAC hot-plug
   ansible.builtin.template:
     src: camilladsp-dac.rules.j2

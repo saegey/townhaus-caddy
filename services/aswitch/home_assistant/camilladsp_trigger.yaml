@@ -1,0 +1,30 @@
+# Automation to proactively start CamillaDSP on the pi-cam when AirPlay
+# playback begins, rather than waiting for the 30-second recovery timer.
+#
+# The dac_status service on the pi-cam subscribes to aswitch/dac/zd3/command
+# and calls `systemctl start camilladsp.service` when it receives "start".
+#
+# Two trigger options are shown — use whichever fits your HA setup:
+#   Option A: MQTT trigger on the raw shairport play_start message (fastest)
+#   Option B: media_player state trigger (requires the Shairport Sync HACS integration)
+
+automation:
+  - alias: "Start CamillaDSP When AirPlay Begins"
+    id: "pi_cam_camilladsp_start_on_play"
+    mode: single
+
+    triggers:
+      # Option A: fires as soon as an AirPlay source connects, before audio flows
+      - trigger: mqtt
+        topic: "pi-cam/shairport/play_start"
+
+      # Option B: fires when the HA media player entity goes to playing
+      # - trigger: state
+      #   entity_id: media_player.lounge_dac
+      #   to: "playing"
+
+    actions:
+      - action: mqtt.publish
+        data:
+          topic: "aswitch/dac/zd3/command"
+          payload: "start"

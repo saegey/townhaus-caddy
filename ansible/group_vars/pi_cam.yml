@@ -18,6 +18,7 @@ aswitch_env_extra:
   DAC_STATE_TOPIC: aswitch/dac/zd3/state
   DAC_DETAILS_TOPIC: aswitch/dac/zd3/details
   DAC_AVAILABILITY_TOPIC: aswitch/dac/zd3/availability
+  DAC_COMMAND_TOPIC: aswitch/dac/zd3/command
 
 shairport_name: lounge_dac
 shairport_alsa_output: "hw:Loopback,0,0"
@@ -30,3 +31,4 @@ camilladsp_capture_device: "hw:Loopback,1"
 camilladsp_playback_device: "plughw:CARD=ZD3,DEV=0"
 camilladsp_playback_card_name: ZD3
 camilladsp_udev_usb_id: "152a:889b"
+camilladsp_mqtt_control_enabled: true
