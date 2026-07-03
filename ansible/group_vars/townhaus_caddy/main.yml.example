@@ -28,7 +28,7 @@ townhaus_caddy_env:
   ADGUARD_ADMIN_PORT: "3001"
   ADGUARD_WEB_PORT: "3080"
 
-  IMMICH_VERSION: v2.7.5
+  IMMICH_VERSION: v3.0.1
   IMMICH_UPLOAD_LOCATION: /srv/storage/immich/library
   IMMICH_DB_DATA_LOCATION: /srv/docker/townhaus-caddy/data/immich/postgres
   IMMICH_DB_HOSTNAME: immich-database
