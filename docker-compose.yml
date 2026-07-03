@@ -72,6 +72,9 @@ services:
     restart: unless-stopped
     ports:
       - "3010:3001"
+    networks:
+      - default
+      - groovenet
     volumes:
       - uptime_kuma_data:/app/data
     logging:
@@ -198,4 +201,4 @@ volumes:
 networks:
   groovenet:
     external: true
-    name: ${GROOVENET_DOCKER_NETWORK:-groovenet_default}
+    name: ${GROOVENET_DOCKER_NETWORK:-dj-playlist_default}

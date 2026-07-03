@@ -148,13 +148,17 @@ just check
 The lower-level `just deploy-stack` and `just configure-beelink` recipes are
 available when only the Compose stack or host roles need to change.
 
-For Groovenet, Caddy proxies over a shared Docker network instead of through
-host port publishing. When starting only Caddy, pass
-`GROOVENET_DOCKER_NETWORK` and optionally `GROOVENET_UPSTREAM_HOST` in the
-shell environment, for example:
+For Beelink, deploy the Caddy stack through Ansible. The playbook renders the
+remote `.env` from `ansible/group_vars/townhaus_caddy/main.yml` and should
+carry `GROOVENET_DOCKER_NETWORK=dj-playlist_default` and
+`GROOVENET_UPSTREAM_HOST=myapp` there. The playbook also creates the shared
+Docker network if it does not already exist.
+
+If you intentionally start only Caddy locally instead of using Ansible, pass
+those values in the shell environment, for example:
 
 ```bash
-GROOVENET_DOCKER_NETWORK=groovenet_default \
+GROOVENET_DOCKER_NETWORK=dj-playlist_default \
 GROOVENET_UPSTREAM_HOST=myapp \
 docker compose up -d caddy
 ```

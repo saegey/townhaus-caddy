@@ -146,6 +146,19 @@
       changed_when: "'Downloaded newer image' in townhaus_caddy_pull_result.stdout or 'Pull complete' in townhaus_caddy_pull_result.stdout"
       when: townhaus_caddy_pull_images | bool
 
+    - name: Ensure Groovenet shared network exists
+      ansible.builtin.command:
+        argv:
+          - docker
+          - network
+          - create
+          - "{{ townhaus_caddy_env.GROOVENET_DOCKER_NETWORK | default('dj-playlist_default') }}"
+      register: townhaus_caddy_groovenet_network_result
+      changed_when: townhaus_caddy_groovenet_network_result.rc == 0
+      failed_when:
+        - townhaus_caddy_groovenet_network_result.rc != 0
+        - "'already exists' not in townhaus_caddy_groovenet_network_result.stderr"
+
     - name: Start or update stack
       ansible.builtin.command:
         argv:
