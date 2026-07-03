@@ -148,6 +148,17 @@ just check
 The lower-level `just deploy-stack` and `just configure-beelink` recipes are
 available when only the Compose stack or host roles need to change.
 
+For Groovenet, Caddy proxies over a shared Docker network instead of through
+host port publishing. When starting only Caddy, pass
+`GROOVENET_DOCKER_NETWORK` and optionally `GROOVENET_UPSTREAM_HOST` in the
+shell environment, for example:
+
+```bash
+GROOVENET_DOCKER_NETWORK=groovenet_default \
+GROOVENET_UPSTREAM_HOST=myapp \
+docker compose up -d caddy
+```
+
 ## Dotfiles
 
 Linux hosts can optionally install your dotfiles repo into `~/.dotfiles` and
