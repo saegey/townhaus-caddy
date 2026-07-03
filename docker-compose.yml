@@ -3,11 +3,14 @@ services:
     image: caddy:2.9-alpine
     container_name: caddy
     restart: unless-stopped
-    env_file:
-      - .env
+    environment:
+      GROOVENET_UPSTREAM_HOST: ${GROOVENET_UPSTREAM_HOST:-myapp}
     ports:
       - "${CADDY_HTTP_PORT:-80}:80"
       - "${CADDY_HTTPS_PORT:-443}:443"
+    networks:
+      - default
+      - groovenet
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./services/portal:/srv/portal:ro
@@ -69,6 +72,9 @@ services:
     restart: unless-stopped
     ports:
       - "3010:3001"
+    networks:
+      - default
+      - groovenet
     volumes:
       - uptime_kuma_data:/app/data
     logging:
@@ -191,3 +197,8 @@ volumes:
   immich_model_cache:
   beszel_data:
   uptime_kuma_data:
+
+networks:
+  groovenet:
+    external: true
+    name: ${GROOVENET_DOCKER_NETWORK:-dj-playlist_default}

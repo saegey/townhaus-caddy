@@ -37,7 +37,8 @@ uptime_kuma_monitors_absent:
   - Scrypted
 
 # Monitors — URLs are checked from within the Uptime Kuma container.
-# Use Docker service names for co-located containers, LAN IPs for everything else.
+# Use Docker service names for co-located containers on shared Docker networks,
+# LAN IPs for everything else.
 uptime_kuma_monitors:
   - name: Immich
     url: http://immich-server:2283
@@ -48,7 +49,7 @@ uptime_kuma_monitors:
   - name: Frigate
     url: http://192.168.2.151:5000
   - name: Groovenet
-    url: http://192.168.2.151:3000
+    url: http://myapp:3000
   - name: Home Assistant
     url: http://192.168.1.x:8123
   - name: aswitch

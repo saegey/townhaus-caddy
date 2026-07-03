@@ -49,9 +49,11 @@ frigate, frigate.home.arpa {
 # Groovenet: dual endpoints for desktop/iOS compatibility:
 # - https://groovenet
 # - https://groovenet.home.arpa
+# Caddy must also be attached to the Groovenet app network so the upstream
+# hostname resolves from inside the container.
 groovenet, groovenet.home.arpa {
 	import common
-	reverse_proxy http://host.docker.internal:3000
+	reverse_proxy http://{$GROOVENET_UPSTREAM_HOST:myapp}:3000
 }
 
 # Home Assistant: dual endpoints for desktop/iOS compatibility:
@@ -137,7 +139,7 @@ beelink {
 		reverse_proxy http://host.docker.internal:5000
 	}
 	handle_path /groovenet/* {
-		reverse_proxy http://host.docker.internal:3000
+		reverse_proxy http://{$GROOVENET_UPSTREAM_HOST:myapp}:3000
 	}
 	respond 404
 }

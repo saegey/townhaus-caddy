@@ -65,12 +65,12 @@ immich-backup-check:
 
 # Show Immich backup service and timer status.
 immich-backup-status:
-    ssh {{ beelink }} "sudo systemctl status immich-backup.service --no-pager"
+    ssh -t {{ beelink }} "sudo systemctl status immich-backup.service --no-pager"
     ssh {{ beelink }} "systemctl list-timers 'immich-backup*' --no-pager"
 
 # Show the latest Immich backup logs.
 immich-backup-logs:
-    ssh {{ beelink }} "sudo journalctl -u immich-backup.service -n 100 --no-pager"
+    ssh -t {{ beelink }} "sudo journalctl -u immich-backup.service -n 100 --no-pager"
 
 # Follow Immich backup logs.
 immich-backup-follow:
