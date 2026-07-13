@@ -4,8 +4,13 @@ general = {
   name = "{{ shairport_name }}";
   interpolation = "soxr";
   output_backend = "alsa";
-  volume_max_db = -3.0;
-  default_airplay_volume = -20.0;
+  // SMSL DAC is fixed line-level with no hardware volume control, and the amp
+  // has a physical volume knob. Attenuating in software here would only lower
+  // the signal before the DAC while its analog noise floor and the fixed amp
+  // gain stay put, raising audible hiss. So pass bit-perfect 0 dBFS to the DAC
+  // and control loudness at the amp.
+  ignore_volume_control = "yes";
+  volume_max_db = 0.0;
 };
 
 alsa = {
