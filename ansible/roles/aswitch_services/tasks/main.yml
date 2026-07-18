@@ -33,6 +33,106 @@
     state: directory
     mode: "0755"
 
+- name: Ensure pigpio build dependencies are installed
+  ansible.builtin.apt:
+    name:
+      - build-essential
+      - git
+      - python3-pigpio
+      - python3-setuptools
+    state: present
+    update_cache: true
+  become: true
+
+- name: Ensure pigpio source directory parent exists
+  ansible.builtin.file:
+    path: "{{ aswitch_pigpio_src_dir | dirname }}"
+    state: directory
+    mode: "0755"
+  become: true
+
+- name: Fetch pigpio source
+  ansible.builtin.git:
+    repo: https://github.com/joan2937/pigpio.git
+    dest: "{{ aswitch_pigpio_src_dir }}"
+    version: "{{ aswitch_pigpio_git_ref }}"
+    depth: 1
+    update: true
+  register: aswitch_pigpio_git
+  become: true
+
+- name: Check for installed pigpiod binary
+  ansible.builtin.stat:
+    path: /usr/local/bin/pigpiod
+  register: aswitch_pigpiod_binary
+
+- name: Build pigpio from source
+  ansible.builtin.command:
+    cmd: make
+    chdir: "{{ aswitch_pigpio_src_dir }}"
+  when: aswitch_pigpio_git.changed or not aswitch_pigpiod_binary.stat.exists
+  register: aswitch_pigpio_build
+  changed_when: true
+  become: true
+
+- name: Install pigpio from source
+  ansible.builtin.command:
+    cmd: make install
+    chdir: "{{ aswitch_pigpio_src_dir }}"
+  when: aswitch_pigpio_git.changed or not aswitch_pigpiod_binary.stat.exists
+  register: aswitch_pigpio_install
+  changed_when: true
+  become: true
+
+- name: Refresh dynamic linker cache after pigpio install
+  ansible.builtin.command:
+    cmd: ldconfig
+  when: aswitch_pigpio_install is changed
+  changed_when: true
+  become: true
+
+- name: Ensure /usr/local/lib is in the dynamic linker config
+  ansible.builtin.copy:
+    dest: /etc/ld.so.conf.d/pigpio-local.conf
+    mode: "0644"
+    content: |
+      /usr/local/lib
+  become: true
+
+- name: Refresh dynamic linker cache for /usr/local/lib
+  ansible.builtin.command:
+    cmd: ldconfig
+  changed_when: true
+  become: true
+
+- name: Deploy pigpiod systemd unit
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/pigpiod.service
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=Daemon required to control GPIO pins via pigpio
+      After=network.target
+
+      [Service]
+      Type=forking
+      Environment=LD_LIBRARY_PATH=/usr/local/lib
+      ExecStart=/usr/local/bin/pigpiod -l
+      ExecStop=/bin/systemctl kill pigpiod
+      KillMode=process
+
+      [Install]
+      WantedBy=multi-user.target
+  become: true
+
+- name: Enable and start pigpiod
+  ansible.builtin.systemd:
+    name: pigpiod.service
+    enabled: true
+    state: started
+    daemon_reload: true
+  become: true
+
 - name: Sync Python source files
   ansible.builtin.copy:
     src: "{{ item }}"
@@ -78,4 +178,12 @@
     state: started
     daemon_reload: true
   loop: "{{ aswitch_services }}"
+  become: true
+
+- name: Disable retired services
+  ansible.builtin.systemd:
+    name: "{{ item }}.service"
+    enabled: false
+    state: stopped
+  loop: "{{ aswitch_disabled_services }}"
   become: true

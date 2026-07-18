@@ -17,10 +17,17 @@ dotfiles_unstow_packages:
   - bash
 
 aswitch_services:
-  - name: aswitch
-    script: aswitch.py
   - name: audio_activity
     script: audio_activity.py
+  - name: ir_logger
+    script: ir_logger.py
+    after:
+      - pigpiod.service
+    wants:
+      - pigpiod.service
+
+aswitch_disabled_services:
+  - aswitch
 
 # 1Password secret references – resolved at deploy time with `op read`.
 # Create these items in 1Password before running the playbook.
@@ -31,6 +38,16 @@ aswitch_env_extra:
   AUDIO_DEVICE: "plughw:CARD=CODEC,DEV=0"
   RECORDINGS_DIR: "{{ ansible_env.HOME }}/aswitch/recordings"
   RECORDING_ATTENUATION_DB: "-6.0"
+  IR_GPIO: "17"
+  IR_TX_GPIO: "18"
+  IR_FRAME_GAP_US: "15000"
+  IR_GLITCH_FILTER_US: "100"
+  IR_TOPIC_RECEIVED: "aswitch/ir/received"
+  IR_TOPIC_AVAILABILITY: "aswitch/ir/availability"
+  IR_TOPIC_SEND: "aswitch/ir/send"
+  IR_TOPIC_SENT: "aswitch/ir/sent"
+  IR_TX_FREQUENCY_HZ: "38000"
+  IR_TX_REPEAT_COUNT: "1"
 
 shairport_name: aswitch
 shairport_alsa_output: "hw:Loopback,0,0"

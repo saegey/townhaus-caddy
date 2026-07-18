@@ -45,6 +45,14 @@ deploy-beelink:
 deploy-aswitch:
     ansible-playbook ansible/playbooks/aswitch.yml --ask-become-pass
 
+# Fast deploy for the IR logger service on aswitch.
+deploy-ir:
+    cd services/aswitch && ASWITCH_USER=saegey ASWITCH_SERVICE=ir_logger.service ./deploy/deploy.sh
+
+# Push the aswitch env file and restart only the IR logger service.
+push-ir-env:
+    cd services/aswitch && ASWITCH_USER=saegey ASWITCH_ENV_FILE=env/aswitch.env ASWITCH_RESTART_SERVICES=ir_logger.service ./deploy/push_env.sh
+
 # Deploy all services to pi-cam.
 deploy-pi-cam:
     ansible-playbook ansible/playbooks/pi_cam.yml --ask-become-pass
@@ -100,6 +108,14 @@ unmount-music:
 # Show audio services on aswitch.
 status-aswitch:
     ssh saegey@aswitch.local "systemctl status camilladsp camillagui shairport-sync aswitch audio_activity --no-pager"
+
+# Show IR logger status on aswitch.
+status-ir:
+    ssh saegey@aswitch.local "systemctl status pigpiod ir_logger --no-pager"
+
+# Follow IR logger logs on aswitch.
+logs-ir:
+    ssh -t saegey@aswitch.local "journalctl -u ir_logger.service -f"
 
 # Show audio services on pi-cam.
 status-pi-cam:

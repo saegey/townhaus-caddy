@@ -1,7 +1,10 @@
 [Unit]
 Description={{ item.name }} MQTT service
-After=network-online.target
+After=network-online.target{% if item.after is defined %} {{ item.after | join(' ') }}{% endif %}
 Wants=network-online.target
+{% if item.wants is defined %}
+Wants={{ item.wants | join(' ') }}
+{% endif %}
 
 [Service]
 Type=simple

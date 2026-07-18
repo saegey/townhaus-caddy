@@ -10,6 +10,8 @@ Raspberry Pi MQTT relay controller and audio monitoring suite. Three independent
 |---|---|---|
 | `aswitch.py` | `aswitch.service` | GPIO relay switch — routes audio source (DAC vs mixer) and controls a trigger output via MQTT commands |
 | `audio_activity.py` | `audio_activity.service` | USB audio RMS detector — publishes active/inactive state, debug RMS values, and optionally records WAV files |
+| `ir_logger.py` | `ir_logger.service` | VS1838B IR receiver + blaster — publishes received raw frames and sends learned preamp commands via MQTT |
+| `preamp_ir_codes.py` | n/a | Learned fingerprint map for recognized preamp remote buttons |
 
 ### `pi-cam.local`
 
@@ -49,6 +51,9 @@ Config lives in `pyproject.toml`. Rules enabled: `E`, `W`, `F` (pyflakes), `I` (
 ASWITCH_SERVICE=audio_activity.service \
 ASWITCH_SERVICE_TEMPLATE=audio_activity.service \
 ./deploy/deploy.sh                                     # audio_activity service
+ASWITCH_SERVICE=ir_logger.service \
+ASWITCH_SERVICE_TEMPLATE=ir_logger.service \
+./deploy/deploy.sh                                     # ir_logger service
 
 ASWITCH_HOST=pi-cam.local \
 ASWITCH_SERVICE=dac_status.service \
@@ -61,6 +66,10 @@ The deploy script rsyncs Python files and `requirements.txt`, creates or reuses 
 Push updated `.env` without redeploying code:
 
 ```bash
+ASWITCH_ENV_FILE=env/aswitch.env \
+ASWITCH_RESTART_SERVICES=ir_logger.service \
+./deploy/push_env.sh
+
 ASWITCH_HOST=pi-cam.local \
 ASWITCH_ENV_FILE=env/pi-cam.env \
 ./deploy/push_env.sh
