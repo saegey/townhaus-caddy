@@ -20,8 +20,8 @@ aswitch_env_extra:
   DAC_AVAILABILITY_TOPIC: aswitch/dac/zd3/availability
   DAC_COMMAND_TOPIC: aswitch/dac/zd3/command
 
-audio_room_name: living_room
-airplay_display_name: Living Room Audio
+audio_room_name: lounge_room
+airplay_display_name: Lounge Room Audio
 
 shairport_name: "{{ airplay_display_name }}"
 shairport_alsa_output: "hw:Loopback,0,0"
