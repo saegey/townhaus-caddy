@@ -1,18 +1,22 @@
 [Unit]
 Description=CamillaDSP
 After=sound.target
+Before=shairport-sync.service
+StartLimitIntervalSec={{ camilladsp_start_limit_interval_sec }}
+StartLimitBurst={{ camilladsp_start_limit_burst }}
 
 [Service]
 Type=simple
-User={{ ansible_user }}
-{% if camilladsp_playback_card_name is defined %}
+User={{ camilladsp_service_user }}
+Group={{ camilladsp_service_group }}
+SupplementaryGroups={{ camilladsp_service_supplementary_groups | join(' ') }}
+ExecStartPre=/usr/bin/test -r {{ camilladsp_config_dir }}/configs/camilla.yml
+{% if camilladsp_playback_card_name is defined and camilladsp_wait_for_playback_card and camilladsp_require_playback_card_present %}
 ExecStartPre=/usr/local/sbin/camilladsp-wait-alsa
 {% endif %}
 ExecStart={{ camilladsp_install_dir }}/camilladsp -p {{ camilladsp_port }} {{ camilladsp_config_dir }}/configs/camilla.yml
 Restart={{ 'on-failure' if camilladsp_udev_usb_id is defined else 'always' }}
-RestartSec=5
-StartLimitIntervalSec=60
-StartLimitBurst=3
+RestartSec={{ camilladsp_restart_sec }}
 
 [Install]
 WantedBy=multi-user.target

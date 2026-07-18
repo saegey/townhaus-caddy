@@ -2,3 +2,25 @@
 shairport_package_name: shairport-sync
 shairport_service_name: shairport-sync.service
 shairport_metadata_enabled: "yes"
+shairport_output_backend: alsa
+shairport_ignore_volume_control: "yes"
+shairport_require_mqtt_support: true
+shairport_config_path: /etc/shairport-sync.conf
+shairport_config_mode: "0640"
+shairport_mqtt_enabled: "yes"
+shairport_mqtt_publish_parsed: "no"
+shairport_mqtt_publish_cover: "no"
+shairport_mqtt_enable_remote: "no"
+shairport_mqtt_topic: shairport
+shairport_systemd_after:
+  - sound.target
+  - camilladsp.service
+  - network.target
+  - nss-lookup.target
+shairport_systemd_wants:
+  - camilladsp.service
+shairport_systemd_requires: []
+shairport_restart: on-failure
+shairport_restart_sec: 5
+shairport_start_limit_interval_sec: 60
+shairport_start_limit_burst: 3

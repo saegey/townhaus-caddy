@@ -27,6 +27,22 @@
     state: present
   become: true
 
+- name: Check installed Shairport Sync feature set
+  ansible.builtin.command:
+    argv: [shairport-sync, -V]
+  register: shairport_version_result
+  changed_when: false
+
+- name: Validate Shairport Sync MQTT support
+  ansible.builtin.assert:
+    that:
+      - shairport_version_result.rc == 0
+      - not shairport_require_mqtt_support or ((shairport_version_result.stdout | lower) is search('mqtt'))
+    fail_msg: >-
+      The installed shairport-sync binary does not report MQTT support in
+      `shairport-sync -V`. Install a build with MQTT enabled before deploying
+      this configuration.
+
 - name: Resolve MQTT username from 1Password
   ansible.builtin.command:
     argv: [op, read, "{{ aswitch_mqtt_user_ref }}"]
@@ -53,17 +69,55 @@
     shairport_mqtt_pass: "{{ shairport_mqtt_pass_result.stdout }}"
   no_log: true
 
+- name: Ensure MQTT broker is reachable for Shairport Sync
+  ansible.builtin.wait_for:
+    host: "{{ mqtt_host }}"
+    port: "{{ mqtt_port }}"
+    timeout: 5
+  when: (shairport_mqtt_enabled | lower) in ['yes', 'true', 'on', '1']
+
 - name: Deploy shairport-sync config
   ansible.builtin.template:
     src: shairport-sync.conf.j2
-    dest: /etc/shairport-sync.conf
-    mode: "0644"
+    dest: "{{ shairport_config_path }}"
+    mode: "{{ shairport_config_mode }}"
+    backup: true
   become: true
   notify: Restart Shairport-Sync
+
+- name: Ensure Shairport Sync config group access
+  ansible.builtin.file:
+    path: "{{ shairport_config_path }}"
+    group: audio
+  become: true
+
+- name: Ensure Shairport Sync systemd override directory exists
+  ansible.builtin.file:
+    path: "/etc/systemd/system/{{ shairport_service_name }}.d"
+    state: directory
+    mode: "0755"
+  become: true
+
+- name: Deploy Shairport Sync systemd override
+  ansible.builtin.template:
+    src: shairport-sync.override.conf.j2
+    dest: "/etc/systemd/system/{{ shairport_service_name }}.d/override.conf"
+    mode: "0644"
+  become: true
+  notify: Reload And Restart Shairport-Sync
 
 - name: Enable and start Shairport Sync
   ansible.builtin.systemd:
     name: "{{ shairport_service_name }}"
     enabled: true
     state: started
+    daemon_reload: true
+  become: true
+
+- name: Check Shairport Sync service state
+  ansible.builtin.command:
+    argv: [systemctl, is-active, "{{ shairport_service_name }}"]
+  register: shairport_service_active
+  changed_when: false
+  failed_when: shairport_service_active.stdout != "active"
   become: true
