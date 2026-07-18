@@ -21,7 +21,7 @@
 - name: Inspect ALSA playback device names
   ansible.builtin.command:
     argv: [aplay, -L]
-  register: camilladsp_aplay_L
+  register: camilladsp_aplay_l_named
   changed_when: false
 
 - name: Inspect ALSA capture devices
@@ -51,12 +51,12 @@
       - >
         (camilladsp_asound_cards.stdout is search(camilladsp_playback_card_name))
         or
-        (camilladsp_aplay_L.stdout is search('CARD=' ~ camilladsp_playback_card_name))
+        (camilladsp_aplay_l_named.stdout is search('CARD=' ~ camilladsp_playback_card_name))
     fail_msg: >-
       The configured playback card {{ camilladsp_playback_card_name }} was not
       found in /proc/asound/cards or aplay -L.
       /proc/asound/cards={{ camilladsp_asound_cards.stdout | replace('\n', '; ') }}
-      aplay -L={{ camilladsp_aplay_L.stdout | replace('\n', '; ') }}
+      aplay -L={{ camilladsp_aplay_l_named.stdout | replace('\n', '; ') }}
   when:
     - camilladsp_playback_card_name is defined
     - camilladsp_require_playback_card_present | bool
@@ -69,7 +69,7 @@
         (
           (camilladsp_asound_cards.stdout is search(camilladsp_playback_card_name))
           or
-          (camilladsp_aplay_L.stdout is search('CARD=' ~ camilladsp_playback_card_name))
+          (camilladsp_aplay_l_named.stdout is search('CARD=' ~ camilladsp_playback_card_name))
         )
       }}
 
@@ -80,7 +80,7 @@
       currently present. Deployment will continue, and CamillaDSP recovery will
       start it when the DAC appears. /proc/asound/cards={{
       camilladsp_asound_cards.stdout | replace('\n', '; ') }} aplay -L={{
-      camilladsp_aplay_L.stdout | replace('\n', '; ') }}
+      camilladsp_aplay_l_named.stdout | replace('\n', '; ') }}
   when:
     - camilladsp_playback_card_name is defined
     - not (camilladsp_require_playback_card_present | bool)

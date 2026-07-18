@@ -1,3 +1,4 @@
+---
 aswitch_app_dir: "{{ remote_home }}/aswitch"
 
 dotfiles_enabled: true

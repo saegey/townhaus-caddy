@@ -1,3 +1,4 @@
+---
 mqtt_host: homeassistant.local
 mqtt_port: 1883
 log_level: INFO

@@ -145,6 +145,21 @@ just deploy
 just check
 ```
 
+## Pre-commit linting
+
+Install the repository hooks once to run YAML checks and `ansible-lint --fix`
+before each commit:
+
+```bash
+pipx install --python "$(mise which python3)" pre-commit  # if not already installed
+pre-commit install
+```
+
+Install the project's Ansible collections first with `just dependencies`.
+
+Run the Ansible lint check manually with `just lint`, or apply its available
+automatic fixes with `just lint-fix`.
+
 The lower-level `just deploy-stack` and `just configure-beelink` recipes are
 available when only the Compose stack or host roles need to change.
 

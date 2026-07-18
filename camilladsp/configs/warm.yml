@@ -1,37 +1,38 @@
-description: null
+---
+description:
 devices:
-  adjust_period: null
+  adjust_period:
   capture:
     channels: 2
     device: hw:0,1
     format: S32_LE
-    labels: null
-    link_mute_control: null
-    link_volume_control: null
-    stop_on_inactive: null
+    labels:
+    link_mute_control:
+    link_volume_control:
+    stop_on_inactive:
     type: Alsa
-  capture_samplerate: null
+  capture_samplerate:
   chunksize: 1024
-  enable_rate_adjust: null
+  enable_rate_adjust:
   multithreaded: true
   playback:
     channels: 2
     device: hw:2,0
     format: S32_LE
     type: Alsa
-  queuelimit: null
-  rate_measure_interval: null
+  queuelimit:
+  rate_measure_interval:
   samplerate: 44100
-  silence_threshold: null
-  silence_timeout: null
-  stop_on_rate_change: null
-  target_level: null
-  volume_limit: null
-  volume_ramp_time: null
-  worker_threads: null
+  silence_threshold:
+  silence_timeout:
+  stop_on_rate_change:
+  target_level:
+  volume_limit:
+  volume_ramp_time:
+  worker_threads:
 filters:
   Bass:
-    description: null
+    description:
     parameters:
       freq: 85
       gain: 2
@@ -39,23 +40,23 @@ filters:
       type: Lowshelf
     type: Biquad
   Treble:
-    description: null
+    description:
     parameters:
       freq: 6500
       gain: -1
       q: 0.7
       type: Highshelf
     type: Biquad
-mixers: null
+mixers:
 pipeline:
-- bypassed: null
-  channels:
-  - 0
-  - 1
-  description: null
-  names:
-  - Bass
-  - Treble
-  type: Filter
-processors: null
+  - bypassed:
+    channels:
+      - 0
+      - 1
+    description:
+    names:
+      - Bass
+      - Treble
+    type: Filter
+processors:
 title: Warm
