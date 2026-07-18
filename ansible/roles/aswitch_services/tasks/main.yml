@@ -46,7 +46,7 @@
 
 - name: Ensure pigpio source directory parent exists
   ansible.builtin.file:
-    path: "{{ aswitch_pigpio_src_dir | dirname }}"
+    path: "{{ aswitch_services_pigpio_src_dir | dirname }}"
     state: directory
     mode: "0755"
   become: true
@@ -54,42 +54,36 @@
 - name: Fetch pigpio source
   ansible.builtin.git:
     repo: https://github.com/joan2937/pigpio.git
-    dest: "{{ aswitch_pigpio_src_dir }}"
-    version: "{{ aswitch_pigpio_git_ref }}"
+    dest: "{{ aswitch_services_pigpio_src_dir }}"
+    version: "{{ aswitch_services_pigpio_git_ref }}"
     depth: 1
     update: true
-  register: aswitch_pigpio_git
+  register: aswitch_services_pigpio_git
   become: true
 
 - name: Check for installed pigpiod binary
   ansible.builtin.stat:
     path: /usr/local/bin/pigpiod
-  register: aswitch_pigpiod_binary
+  register: aswitch_services_pigpiod_binary
 
 - name: Build pigpio from source
   ansible.builtin.command:
     cmd: make
-    chdir: "{{ aswitch_pigpio_src_dir }}"
-  when: aswitch_pigpio_git.changed or not aswitch_pigpiod_binary.stat.exists
-  register: aswitch_pigpio_build
+    chdir: "{{ aswitch_services_pigpio_src_dir }}"
+  when: aswitch_services_pigpio_git.changed or not aswitch_services_pigpiod_binary.stat.exists
+  register: aswitch_services_pigpio_build
   changed_when: true
   become: true
 
 - name: Install pigpio from source
   ansible.builtin.command:
     cmd: make install
-    chdir: "{{ aswitch_pigpio_src_dir }}"
-  when: aswitch_pigpio_git.changed or not aswitch_pigpiod_binary.stat.exists
-  register: aswitch_pigpio_install
+    chdir: "{{ aswitch_services_pigpio_src_dir }}"
+  when: aswitch_services_pigpio_git.changed or not aswitch_services_pigpiod_binary.stat.exists
+  register: aswitch_services_pigpio_install
   changed_when: true
   become: true
-
-- name: Refresh dynamic linker cache after pigpio install
-  ansible.builtin.command:
-    cmd: ldconfig
-  when: aswitch_pigpio_install is changed
-  changed_when: true
-  become: true
+  notify: Refresh Dynamic Linker Cache
 
 - name: Ensure /usr/local/lib is in the dynamic linker config
   ansible.builtin.copy:
@@ -98,12 +92,10 @@
     content: |
       /usr/local/lib
   become: true
+  notify: Refresh Dynamic Linker Cache
 
-- name: Refresh dynamic linker cache for /usr/local/lib
-  ansible.builtin.command:
-    cmd: ldconfig
-  changed_when: true
-  become: true
+- name: Apply dynamic linker cache changes before starting pigpiod
+  ansible.builtin.meta: flush_handlers
 
 - name: Deploy pigpiod systemd unit
   ansible.builtin.copy:
@@ -185,5 +177,5 @@
     name: "{{ item }}.service"
     enabled: false
     state: stopped
-  loop: "{{ aswitch_disabled_services }}"
+  loop: "{{ aswitch_services_disabled_services }}"
   become: true

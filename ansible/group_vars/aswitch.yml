@@ -27,7 +27,7 @@ aswitch_services:
     wants:
       - pigpiod.service
 
-aswitch_disabled_services:
+aswitch_services_disabled_services:
   - aswitch
 
 # 1Password secret references – resolved at deploy time with `op read`.

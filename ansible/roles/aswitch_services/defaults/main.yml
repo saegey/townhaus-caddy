@@ -6,6 +6,6 @@ aswitch_services_source_files:
   - "{{ playbook_dir }}/../../services/aswitch/ir_logger.py"
   - "{{ playbook_dir }}/../../services/aswitch/preamp_ir_codes.py"
 
-aswitch_disabled_services: []
-aswitch_pigpio_src_dir: /usr/local/src/pigpio
-aswitch_pigpio_git_ref: master
+aswitch_services_disabled_services: []
+aswitch_services_pigpio_src_dir: /usr/local/src/pigpio
+aswitch_services_pigpio_git_ref: master
