@@ -1,3 +1,4 @@
+---
 services:
   caddy:
     image: caddy:2.9-alpine
@@ -197,7 +198,6 @@ volumes:
   immich_model_cache:
   beszel_data:
   uptime_kuma_data:
-
 networks:
   groovenet:
     external: true

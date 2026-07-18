@@ -2,3 +2,12 @@
 camilladsp_recover_enabled: "{{ camilladsp_playback_card_name is defined }}"
 camilladsp_recover_interval: "30s"
 camilladsp_mqtt_control_enabled: false
+camilladsp_service_user: "{{ ansible_user }}"
+camilladsp_service_group: "{{ ansible_user }}"
+camilladsp_service_supplementary_groups:
+  - audio
+camilladsp_wait_for_playback_card: true
+camilladsp_require_playback_card_present: false
+camilladsp_start_limit_interval_sec: 60
+camilladsp_start_limit_burst: 3
+camilladsp_restart_sec: 5

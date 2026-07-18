@@ -3,27 +3,36 @@
 general = {
   name = "{{ shairport_name }}";
   interpolation = "soxr";
-  output_backend = "alsa";
-  // SMSL DAC is fixed line-level with no hardware volume control, and the amp
-  // has a physical volume knob. Attenuating in software here would only lower
-  // the signal before the DAC while its analog noise floor and the fixed amp
-  // gain stay put, raising audible hiss. So pass bit-perfect 0 dBFS to the DAC
-  // and control loudness at the amp.
-  ignore_volume_control = "yes";
-  volume_max_db = 0.0;
+  output_backend = "{{ shairport_output_backend }}";
+  // The ZD3 volume will be driven externally from MQTT metadata, so Shairport
+  // should publish the requested AirPlay volume without attenuating the PCM
+  // stream on its way into CamillaDSP.
+  ignore_volume_control = "{{ shairport_ignore_volume_control }}";
+{% if shairport_volume_max_db is defined %}
+  volume_max_db = {{ shairport_volume_max_db }};
+{% endif %}
 };
 
 alsa = {
   output_device = "{{ shairport_alsa_output }}";
+{% if shairport_alsa_output_rate is defined %}
+  output_rate = {{ shairport_alsa_output_rate }};
+{% endif %}
+{% if shairport_alsa_output_format is defined %}
+  output_format = "{{ shairport_alsa_output_format }}";
+{% endif %}
 };
 
 mqtt = {
-  enabled = "yes";
+  enabled = "{{ shairport_mqtt_enabled }}";
   hostname = "{{ mqtt_host }}";
   port = {{ mqtt_port }};
   topic = "{{ shairport_mqtt_topic }}";
   username = "{{ shairport_mqtt_user }}";
   password = "{{ shairport_mqtt_pass }}";
+{% if shairport_mqtt_client_id is defined %}
+  client_id = "{{ shairport_mqtt_client_id }}";
+{% endif %}
   publish_parsed = "{{ shairport_mqtt_publish_parsed | default('no') }}";
   publish_cover = "{{ shairport_mqtt_publish_cover | default('no') }}";
 {% if shairport_mqtt_enable_remote is defined %}
@@ -37,5 +46,5 @@ metadata = {
 };
 
 diagnostics = {
-  log_verbosity = 1;
+  log_verbosity = {{ shairport_log_verbosity | default(1) }};
 };

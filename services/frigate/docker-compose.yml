@@ -10,7 +10,7 @@ services:
     # Load deployment-specific values from .env (MQTT, TZ, UID/GID, etc).
     env_file:
       - .env
-    
+
     # HomeKit via go2rtc relies on local discovery; host mode is the simplest path.
     network_mode: host
 

@@ -1,3 +1,4 @@
+---
 aswitch_app_dir: "{{ remote_home }}/aswitch"
 
 aswitch_services:
@@ -20,15 +21,24 @@ aswitch_env_extra:
   DAC_AVAILABILITY_TOPIC: aswitch/dac/zd3/availability
   DAC_COMMAND_TOPIC: aswitch/dac/zd3/command
 
-shairport_name: lounge_dac
+audio_room_name: lounge_room
+airplay_display_name: Lounge Room Audio
+
+shairport_name: "{{ airplay_display_name }}"
 shairport_alsa_output: "hw:Loopback,0,0"
-shairport_mqtt_topic: pi-cam/shairport
+shairport_alsa_output_rate: 44100
+shairport_alsa_output_format: S32_LE
+shairport_ignore_volume_control: "yes"
+shairport_mqtt_topic: "audio/pi-cam/shairport"
+shairport_mqtt_client_id: shairport-living-room
 shairport_mqtt_publish_parsed: "yes"
 shairport_mqtt_publish_cover: "yes"
-shairport_mqtt_enable_remote: "yes"
+shairport_mqtt_enable_remote: "no"
 
 camilladsp_capture_device: "hw:Loopback,1"
 camilladsp_playback_device: "plughw:CARD=ZD3,DEV=0"
 camilladsp_playback_card_name: ZD3
 camilladsp_udev_usb_id: "152a:889b"
 camilladsp_mqtt_control_enabled: true
+audio_keep_output_open: true
+audio_pop_mitigation_enabled: true

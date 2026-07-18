@@ -26,7 +26,16 @@ syntax-check:
 # Run repository validation checks.
 check:
     just syntax-check
+    just lint
     git diff --check
+
+# Lint Ansible content. Use `pre-commit install` once to run this automatically before commits.
+lint:
+    ansible-lint ansible/
+
+# Apply Ansible lint's available automatic fixes.
+lint-fix:
+    ansible-lint --fix ansible/
 
 # Deploy the Docker Compose stack to beelink.
 deploy-stack:

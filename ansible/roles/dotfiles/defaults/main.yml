@@ -36,7 +36,6 @@ dotfiles_stow_packages:
   - claude
 
 dotfiles_unstow_packages: []
-
 dotfiles_backup_dir: "{{ remote_home }}/.dotfiles-pre-ansible-backup-{{ ansible_date_time.iso8601_basic_short }}"
 dotfiles_conflicting_targets:
   - .bashrc
