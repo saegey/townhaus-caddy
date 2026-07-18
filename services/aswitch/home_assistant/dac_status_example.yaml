@@ -1,3 +1,4 @@
+---
 mqtt:
   binary_sensor:
     - name: "Fosi ZD3 DAC Connected"

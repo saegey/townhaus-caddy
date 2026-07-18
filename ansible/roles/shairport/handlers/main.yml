@@ -4,3 +4,10 @@
     name: "{{ shairport_service_name }}"
     state: restarted
   become: true
+
+- name: Reload And Restart Shairport-Sync
+  ansible.builtin.systemd:
+    name: "{{ shairport_service_name }}"
+    state: restarted
+    daemon_reload: true
+  become: true

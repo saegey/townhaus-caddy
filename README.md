@@ -145,6 +145,21 @@ just deploy
 just check
 ```
 
+## Pre-commit linting
+
+Install the repository hooks once to run YAML checks and `ansible-lint --fix`
+before each commit:
+
+```bash
+pipx install --python "$(mise which python3)" pre-commit  # if not already installed
+pre-commit install
+```
+
+Install the project's Ansible collections first with `just dependencies`.
+
+Run the Ansible lint check manually with `just lint`, or apply its available
+automatic fixes with `just lint-fix`.
+
 The lower-level `just deploy-stack` and `just configure-beelink` recipes are
 available when only the Compose stack or host roles need to change.
 
@@ -210,6 +225,71 @@ Seven EQ presets are managed in `ansible/roles/camilladsp/templates/configs/` an
 | `warm.yml` | Bass lift, treble cut |
 
 Switch presets via the CamillaGUI web UI (`https://aswitch` or `https://pi-cam`).
+
+## Pi-cam audio streamer
+
+`pi-cam.local` is managed through the existing `shairport`, `camilladsp`, and
+`aswitch_services` roles in `ansible/playbooks/pi_cam.yml`. The intended signal
+path is:
+
+```text
+AirPlay -> Shairport Sync -> ALSA Loopback -> CamillaDSP -> Fosi ZD3 -> amp
+```
+
+For `pi-cam`, Shairport Sync is configured to publish MQTT metadata while
+leaving the PCM stream at full scale. Home Assistant should consume the raw
+AirPlay volume metadata from MQTT and translate that into ZD3 IR volume
+commands; Shairport itself should not attenuate the audio signal digitally.
+
+Deploy and validate:
+
+```bash
+just deploy-pi-cam
+just status-pi-cam
+just syntax-check
+```
+
+Useful checks on the Pi:
+
+```bash
+systemctl status shairport-sync camilladsp --no-pager
+journalctl -u shairport-sync -f
+journalctl -u camilladsp -f
+shairport-sync -V
+aplay -l
+aplay -L
+arecord -l
+cat /proc/asound/cards
+```
+
+MQTT inspection:
+
+```bash
+mosquitto_sub -h MQTT_HOST -u MQTT_USERNAME -P MQTT_PASSWORD \
+  -t 'audio/pi-cam/shairport/#' -v
+```
+
+Expected `pi-cam` behavior:
+
+- The base Shairport topic is `audio/pi-cam/shairport`.
+- AirPlay-requested volume should be published to MQTT in the format emitted by
+  the installed `shairport-sync` build, including mute sentinels if present.
+- `shairport-sync.service` is ordered after `camilladsp.service` so playback
+  does not start before the DSP path is available.
+- The rendered Shairport config is restricted to root-readable permissions
+  because it contains MQTT credentials.
+
+Physical Pi facts still to verify after deployment:
+
+- The exact `shairport-sync -V` output on `pi-cam`, including reported MQTT
+  support and any version-specific config syntax differences.
+- The exact MQTT subtopics and payloads emitted by the installed build for
+  volume, metadata, availability, and session state.
+- Whether `plughw:CARD=ZD3,DEV=0` and `hw:Loopback,1` remain stable across
+  reboot and USB reconnect events on this Pi.
+- Whether the stream-start pop is improved by holding CamillaDSP open and
+  fixing the Shairport output sample rate/format to `44100` and `S32_LE`.
+- Whether additional mitigation is still needed at the DAC or DSP layer.
 
 ## Frigate NVR
 

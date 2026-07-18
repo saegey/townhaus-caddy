@@ -12,6 +12,80 @@
     mode: "0644"
   become: true
 
+- name: Inspect ALSA playback devices
+  ansible.builtin.command:
+    argv: [aplay, -l]
+  register: camilladsp_aplay_l
+  changed_when: false
+
+- name: Inspect ALSA playback device names
+  ansible.builtin.command:
+    argv: [aplay, -L]
+  register: camilladsp_aplay_l_named
+  changed_when: false
+
+- name: Inspect ALSA capture devices
+  ansible.builtin.command:
+    argv: [arecord, -l]
+  register: camilladsp_arecord_l
+  changed_when: false
+
+- name: Inspect ALSA sound cards
+  ansible.builtin.command:
+    argv: [cat, /proc/asound/cards]
+  register: camilladsp_asound_cards
+  changed_when: false
+
+- name: Validate ALSA loopback card is present
+  ansible.builtin.assert:
+    that:
+      - camilladsp_asound_cards.stdout is search('Loopback')
+    fail_msg: >-
+      snd-aloop is required for the configured capture path, but no Loopback
+      card was found in /proc/asound/cards.
+  when: camilladsp_capture_device is search('Loopback')
+
+- name: Validate configured playback card is present
+  ansible.builtin.assert:
+    that:
+      - >
+        (camilladsp_asound_cards.stdout is search(camilladsp_playback_card_name))
+        or
+        (camilladsp_aplay_l_named.stdout is search('CARD=' ~ camilladsp_playback_card_name))
+    fail_msg: >-
+      The configured playback card {{ camilladsp_playback_card_name }} was not
+      found in /proc/asound/cards or aplay -L.
+      /proc/asound/cards={{ camilladsp_asound_cards.stdout | replace('\n', '; ') }}
+      aplay -L={{ camilladsp_aplay_l_named.stdout | replace('\n', '; ') }}
+  when:
+    - camilladsp_playback_card_name is defined
+    - camilladsp_require_playback_card_present | bool
+
+- name: Derive CamillaDSP playback card presence
+  ansible.builtin.set_fact:
+    camilladsp_playback_card_present: >-
+      {{
+        (camilladsp_playback_card_name is defined) and
+        (
+          (camilladsp_asound_cards.stdout is search(camilladsp_playback_card_name))
+          or
+          (camilladsp_aplay_l_named.stdout is search('CARD=' ~ camilladsp_playback_card_name))
+        )
+      }}
+
+- name: Warn when configured playback card is absent
+  ansible.builtin.debug:
+    msg: >-
+      The configured playback card {{ camilladsp_playback_card_name }} is not
+      currently present. Deployment will continue, and CamillaDSP recovery will
+      start it when the DAC appears. /proc/asound/cards={{
+      camilladsp_asound_cards.stdout | replace('\n', '; ') }} aplay -L={{
+      camilladsp_aplay_l_named.stdout | replace('\n', '; ') }}
+  when:
+    - camilladsp_playback_card_name is defined
+    - not (camilladsp_require_playback_card_present | bool)
+    - not camilladsp_playback_card_present
+
 - name: Check installed CamillaDSP version
   ansible.builtin.command: "{{ camilladsp_install_dir }}/camilladsp --version"
   register: camilladsp_installed_version
@@ -86,6 +160,7 @@
     src: "configs/{{ item }}.j2"
     dest: "{{ camilladsp_config_dir }}/configs/{{ item }}"
     mode: "0644"
+    backup: true
   loop:
     - camilla.yml
     - flat.yml
@@ -180,9 +255,18 @@
   ansible.builtin.systemd:
     name: camilladsp.service
     enabled: true
-    state: started
+    state: "{{ 'started' if (camilladsp_playback_card_present or camilladsp_require_playback_card_present | bool) else 'stopped' }}"
     daemon_reload: true
   become: true
+
+- name: Check CamillaDSP service state
+  ansible.builtin.command:
+    argv: [systemctl, is-active, camilladsp.service]
+  register: camilladsp_service_active
+  changed_when: false
+  failed_when: camilladsp_service_active.stdout != "active"
+  become: true
+  when: camilladsp_playback_card_present or camilladsp_require_playback_card_present | bool
 
 - name: Enable and start CamillaDSP recovery timer
   ansible.builtin.systemd:

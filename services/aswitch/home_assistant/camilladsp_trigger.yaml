@@ -16,7 +16,7 @@ automation:
     triggers:
       # Option A: fires as soon as an AirPlay source connects, before audio flows
       - trigger: mqtt
-        topic: "pi-cam/shairport/play_start"
+        topic: "audio/pi-cam/shairport/play_start"
 
       # Option B: fires when the HA media player entity goes to playing
       # - trigger: state

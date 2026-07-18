@@ -1,0 +1,17 @@
+[Unit]
+After={{ shairport_systemd_after | join(' ') }}
+StartLimitIntervalSec={{ shairport_start_limit_interval_sec }}
+StartLimitBurst={{ shairport_start_limit_burst }}
+{% if shairport_systemd_wants | length > 0 %}
+Wants={{ shairport_systemd_wants | join(' ') }}
+{% endif %}
+{% if shairport_systemd_requires | length > 0 %}
+Requires={{ shairport_systemd_requires | join(' ') }}
+{% endif %}
+
+[Service]
+ExecStartPre=
+ExecStartPre=/usr/bin/test -r {{ shairport_config_path }}
+Restart={{ shairport_restart }}
+RestartSec={{ shairport_restart_sec }}
+SupplementaryGroups=audio

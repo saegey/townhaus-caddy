@@ -4,10 +4,14 @@ on:
   push:
     paths:
       - "ansible/**"
+      - ".pre-commit-config.yaml"
+      - "Justfile"
       - ".github/workflows/lint.yml"
   pull_request:
     paths:
       - "ansible/**"
+      - ".pre-commit-config.yaml"
+      - "Justfile"
       - ".github/workflows/lint.yml"
 
 jobs:
