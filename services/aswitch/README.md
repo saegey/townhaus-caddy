@@ -21,8 +21,11 @@ Aswitch is a Raspberry Pi-controlled audio switching and amplifier trigger syste
 |---|---|
 | `aswitch.py` | GPIO relay control — switches audio source and 12V trigger via MQTT |
 | `audio_activity.py` | USB audio RMS detector — publishes active/inactive state, optional WAV recording |
+| `ir_logger.py` | VS1838B IR receiver + IR LED blaster — receives raw frames and sends learned preamp commands via MQTT |
+| `preamp_ir_codes.py` | Learned preamp IR fingerprint map used to tag known buttons |
 | `deploy/aswitch.service` | systemd unit for relay control |
 | `deploy/audio_activity.service` | systemd unit for audio activity detection |
+| `deploy/ir_logger.service` | systemd unit for IR logging |
 
 ### Services — `pi-cam.local`
 
@@ -175,6 +178,26 @@ Amp on  -> ~+12V
 | `aswitch/dac/zd3/command` | command | `start` |
 
 Publishing `start` to the command topic immediately triggers `systemctl start camilladsp.service`, bypassing the 30-second recovery timer. Intended for use from a Home Assistant automation when AirPlay playback begins — see [`home_assistant/camilladsp_trigger.yaml`](home_assistant/camilladsp_trigger.yaml).
+
+### ir_logger.py — Raw IR Frame Logger
+
+| Topic | Direction | Payloads |
+|---|---|---|
+| `aswitch/ir/received` | event | JSON object with `ts`, `gpio`, `tx_gpio`, `idle_gap_us`, `frame_type`, `pulses_us`, and for full frames `fingerprint_bits`, `fingerprint_hex`, optional `button` |
+| `aswitch/ir/availability` | availability (retained) | `online`, `offline` |
+| `aswitch/ir/send` | command | known button name such as `vol_up`, `vol_down`, `mute`, `input`, `light`, `power` |
+| `aswitch/ir/sent` | event | JSON object with `ts`, `button`, `fingerprint_hex`, `tx_gpio`, `tx_frequency_hz`, `repeat_count` |
+
+Known preamp button fingerprints:
+
+| Button | Fingerprint bits | Hex |
+|---|---|---|
+| `vol_up` | `10110101000001000001010111101010` | `0xB50415EA` |
+| `vol_down` | `10110101000001000101111110100000` | `0xB5045FA0` |
+| `mute` | `10110101000001001010111101010000` | `0xB504AF50` |
+| `input` | `10110101000001000011010111001010` | `0xB50435CA` |
+| `light` | `10110101000001001101101100100100` | `0xB504DB24` |
+| `power` | `10110101000001001001011101101000` | `0xB5049768` |
 
 ## Home Assistant Integration
 
@@ -355,6 +378,12 @@ ASWITCH_SERVICE_TEMPLATE=audio_activity.service \
 ```
 
 ```bash
+ASWITCH_SERVICE=ir_logger.service \
+ASWITCH_SERVICE_TEMPLATE=ir_logger.service \
+./deploy/deploy.sh                          # ir_logger service
+```
+
+```bash
 ASWITCH_HOST=pi-cam.local \
 ASWITCH_SERVICE=dac_status.service \
 ASWITCH_SERVICE_TEMPLATE=dac_status.service \
@@ -394,6 +423,12 @@ ASWITCH_ENV_FILE=env/pi-cam.env \
 ./deploy/push_env.sh
 ```
 
+```bash
+ASWITCH_ENV_FILE=env/aswitch.env \
+ASWITCH_RESTART_SERVICES="ir_logger.service" \
+./deploy/push_env.sh
+```
+
 Push env and restart specific services:
 
 ```bash
@@ -409,6 +444,7 @@ ASWITCH_RESTART_SERVICES="dac_status.service,audio_activity.service" \
 ssh pi@aswitch.local
 sudo systemctl status aswitch.service
 sudo systemctl status audio_activity.service
+journalctl -u ir_logger.service -f
 journalctl -u aswitch.service -f
 journalctl -u audio_activity.service -f
 ```

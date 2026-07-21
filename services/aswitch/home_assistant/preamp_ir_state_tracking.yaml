@@ -1,0 +1,122 @@
+# Example helpers and automations for keeping Home Assistant in sync with
+# manual preamp remote usage observed by `aswitch/ir/received`.
+#
+# Adjust helper names/options to match your actual preamp behavior.
+
+input_boolean:
+  preamp_power:
+    name: Preamp Power
+    icon: mdi:power
+
+  preamp_mute:
+    name: Preamp Mute
+    icon: mdi:volume-mute
+
+input_select:
+  preamp_input:
+    name: Preamp Input
+    options:
+      - Unknown
+      - Input 1
+      - Input 2
+    icon: mdi:video-input-hdmi
+
+automation:
+  - alias: "Preamp: Track Remote Power"
+    id: "aswitch_preamp_track_remote_power"
+    mode: single
+    triggers:
+      - trigger: mqtt
+        topic: "aswitch/ir/received"
+    conditions:
+      - condition: template
+        value_template: "{{ trigger.payload_json.button | default('') == 'power' }}"
+      - condition: template
+        value_template: "{{ trigger.payload_json.frame_type == 'full' }}"
+    actions:
+      - action: input_boolean.toggle
+        target:
+          entity_id: input_boolean.preamp_power
+
+  - alias: "Preamp: Track Remote Mute"
+    id: "aswitch_preamp_track_remote_mute"
+    mode: single
+    triggers:
+      - trigger: mqtt
+        topic: "aswitch/ir/received"
+    conditions:
+      - condition: template
+        value_template: "{{ trigger.payload_json.button | default('') == 'mute' }}"
+      - condition: template
+        value_template: "{{ trigger.payload_json.frame_type == 'full' }}"
+    actions:
+      - action: input_boolean.toggle
+        target:
+          entity_id: input_boolean.preamp_mute
+
+  - alias: "Preamp: Track Remote Input"
+    id: "aswitch_preamp_track_remote_input"
+    mode: single
+    triggers:
+      - trigger: mqtt
+        topic: "aswitch/ir/received"
+    conditions:
+      - condition: template
+        value_template: "{{ trigger.payload_json.button | default('') == 'input' }}"
+      - condition: template
+        value_template: "{{ trigger.payload_json.frame_type == 'full' }}"
+    actions:
+      - action: input_select.select_next
+        target:
+          entity_id: input_select.preamp_input
+        data:
+          cycle: true
+
+  - alias: "Preamp: Clear Mute When Power Turns Off"
+    id: "aswitch_preamp_clear_mute_when_off"
+    mode: single
+    triggers:
+      - trigger: state
+        entity_id: input_boolean.preamp_power
+        to: "off"
+    actions:
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.preamp_mute
+
+  - alias: "Preamp: Example Sync From HA Button Presses"
+    id: "aswitch_preamp_example_sync_from_ha_buttons"
+    mode: parallel
+    triggers:
+      - trigger: state
+        entity_id: sensor.preamp_ir_last_sent
+    conditions:
+      - condition: template
+        value_template: "{{ trigger.to_state.state not in ['unknown', 'unavailable', ''] }}"
+    actions:
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ trigger.to_state.state == 'power' }}"
+            sequence:
+              - action: input_boolean.toggle
+                target:
+                  entity_id: input_boolean.preamp_power
+
+          - conditions:
+              - condition: template
+                value_template: "{{ trigger.to_state.state == 'mute' }}"
+            sequence:
+              - action: input_boolean.toggle
+                target:
+                  entity_id: input_boolean.preamp_mute
+
+          - conditions:
+              - condition: template
+                value_template: "{{ trigger.to_state.state == 'input' }}"
+            sequence:
+              - action: input_select.select_next
+                target:
+                  entity_id: input_select.preamp_input
+                data:
+                  cycle: true

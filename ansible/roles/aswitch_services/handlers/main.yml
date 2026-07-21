@@ -19,3 +19,9 @@
     daemon_reload: true
   loop: "{{ aswitch_services }}"
   become: true
+
+- name: Refresh Dynamic Linker Cache
+  ansible.builtin.command:
+    cmd: ldconfig
+  changed_when: true
+  become: true
