@@ -128,4 +128,4 @@ logs-ir:
 
 # Show audio services on pi-cam.
 status-pi-cam:
-    ssh saegey@pi-cam.local "systemctl status camilladsp camillagui shairport-sync dac_status --no-pager"
+    ssh saegey@pi-cam.local "systemctl status camilladsp camillagui shairport-sync dac_status amp_trigger --no-pager"

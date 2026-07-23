@@ -32,9 +32,10 @@ Aswitch is a Raspberry Pi-controlled audio switching and amplifier trigger syste
 | File | Purpose |
 |---|---|
 | `dac_status.py` | USB DAC presence detector — polls `lsusb` and publishes MQTT state |
+| `amp_trigger.py` | GPIO relay control — switches the amp 12V trigger via MQTT |
 | `deploy/dac_status.service` | systemd unit for DAC presence detection |
 
-`pi-cam.local` runs only `dac_status.py`. There is no relay switching, GPIO wiring, or audio recording on that host — amp control is handled by the ESPHome IR device.
+`pi-cam.local` runs `dac_status.py` and `amp_trigger.py`. There is no audio-source switching or audio recording on that host.
 
 ### Deploy tooling
 
@@ -102,7 +103,7 @@ Rules:
 
 ## GPIO Wiring
 
-GPIO pins use BCM numbering (`AUDIO_PIN = 17`, `TRIGGER_PIN = 27`).
+GPIO pins use BCM numbering. The audio-source relay remains on `aswitch.local` (`AUDIO_PIN = 17`); the amp trigger relay runs on `pi-cam.local` (`AMP_TRIGGER_GPIO = 27`).
 
 > **Note:** Relay polarity may vary by module. In this build both relays behaved opposite to the initial active-low assumption. Active/inactive states are defined as constants in `aswitch.py`.
 
@@ -148,14 +149,18 @@ Amp on  -> ~+12V
 
 ## MQTT Topics
 
-### aswitch.py — Relay Control
+### aswitch.py — Audio Source Control
 
 | Topic | Direction | Payloads |
 |---|---|---|
 | `aswitch/audio` | command | `dac`, `mixer` |
 | `aswitch/audio/state` | state (retained) | `dac`, `mixer` |
-| `aswitch/trigger` | command | `on`, `off` |
-| `aswitch/trigger/state` | state (retained) | `on`, `off` |
+### amp_trigger.py — Amp Trigger Control (`pi-cam.local`)
+
+| Topic | Direction | Payloads |
+|---|---|---|
+| `pi-cam/trigger` | command | `on`, `off` |
+| `pi-cam/trigger/state` | state (retained) | `on`, `off` |
 
 ### audio_activity.py — Audio Monitor
 
@@ -208,8 +213,8 @@ mqtt:
   switch:
     - name: "Amp Power"
       unique_id: aswitch_amp_power
-      command_topic: "aswitch/trigger"
-      state_topic: "aswitch/trigger/state"
+      command_topic: "pi-cam/trigger"
+      state_topic: "pi-cam/trigger/state"
       payload_on: "on"
       payload_off: "off"
 

@@ -2,8 +2,8 @@ mqtt:
   switch:
     - name: "Amp Power"
       unique_id: aswitch_amp_power
-      command_topic: "aswitch/trigger"
-      state_topic: "aswitch/trigger/state"
+      command_topic: "pi-cam/trigger"
+      state_topic: "pi-cam/trigger/state"
       payload_on: "on"
       payload_off: "off"
 

@@ -4,9 +4,12 @@ aswitch_app_dir: "{{ remote_home }}/aswitch"
 aswitch_services:
   - name: dac_status
     script: dac_status.py
+  - name: amp_trigger
+    script: amp_trigger.py
 
 aswitch_services_source_files:
   - "{{ playbook_dir }}/../../services/aswitch/dac_status.py"
+  - "{{ playbook_dir }}/../../services/aswitch/amp_trigger.py"
 
 # 1Password secret references – resolved at deploy time with `op read`.
 aswitch_mqtt_user_ref: op://Homelab/MQTT/username
@@ -20,6 +23,10 @@ aswitch_env_extra:
   DAC_DETAILS_TOPIC: aswitch/dac/zd3/details
   DAC_AVAILABILITY_TOPIC: aswitch/dac/zd3/availability
   DAC_COMMAND_TOPIC: aswitch/dac/zd3/command
+  AMP_TRIGGER_GPIO: "27"
+  AMP_TRIGGER_COMMAND_TOPIC: pi-cam/trigger
+  AMP_TRIGGER_STATE_TOPIC: pi-cam/trigger/state
+  AMP_TRIGGER_AVAILABILITY_TOPIC: pi-cam/availability
 
 audio_room_name: lounge_room
 airplay_display_name: Lounge Room Audio
@@ -29,7 +36,7 @@ shairport_alsa_output: "hw:Loopback,0,0"
 shairport_alsa_output_rate: 44100
 shairport_alsa_output_format: S32_LE
 shairport_ignore_volume_control: "yes"
-shairport_mqtt_topic: "audio/pi-cam/shairport"
+shairport_mqtt_topic: "pi-cam/shairport"
 shairport_mqtt_client_id: shairport-living-room
 shairport_mqtt_publish_parsed: "yes"
 shairport_mqtt_publish_cover: "yes"

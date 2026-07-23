@@ -54,7 +54,7 @@ shairport_name: aswitch
 shairport_alsa_output: "hw:Loopback,0,0"
 shairport_mqtt_topic: aswitch/shairport
 shairport_mqtt_publish_parsed: "yes"
-shairport_mqtt_publish_cover: "no"
+shairport_mqtt_publish_cover: "yes"
 
 camilladsp_capture_device: "hw:Loopback,1"
 camilladsp_playback_device: "plughw:CARD=AUDIO,DEV=0"

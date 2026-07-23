@@ -1,6 +1,6 @@
 # AGENTS.md — aswitch
 
-Raspberry Pi MQTT relay controller and audio monitoring suite. Three independent Python services run on one or more Pis and publish state to Home Assistant via MQTT.
+Raspberry Pi MQTT relay controller and audio monitoring suite. Independent Python services run on one or more Pis and publish state to Home Assistant via MQTT.
 
 ## Services
 
@@ -18,8 +18,9 @@ Raspberry Pi MQTT relay controller and audio monitoring suite. Three independent
 | File | Systemd unit | Purpose |
 |---|---|---|
 | `dac_status.py` | `dac_status.service` | USB DAC presence detector — polls `lsusb` and publishes connected/disconnected state |
+| `amp_trigger.py` | `amp_trigger.service` | GPIO relay switch — controls the amp 12V trigger via MQTT |
 
-`pi-cam.local` runs only `dac_status.py`. No relay switching, GPIO, or audio recording — amp control is handled by the ESPHome IR blaster (`esphome/fosi-zd3-ir.yaml`).
+`pi-cam.local` runs the DAC status monitor and amp trigger relay. It has no audio-source switching or audio recording.
 
 ## Key patterns
 

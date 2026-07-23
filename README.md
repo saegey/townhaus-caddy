@@ -8,7 +8,7 @@ Homelab monorepo managing a Caddy reverse proxy stack, Frigate NVR, Raspberry Pi
 |---|---|
 | `beelink.local` | Main server — Caddy, AdGuard, Immich, Beszel Hub |
 | `aswitch.local` | Audio Pi — Shairport, CamillaDSP, GPIO relay services |
-| `pi-cam.local` | Lounge Pi — Shairport, CamillaDSP, DAC status service |
+| `pi-cam.local` | Lounge Pi — Shairport, CamillaDSP, DAC status, amp-trigger relay |
 
 ## Services
 
@@ -42,6 +42,7 @@ Homelab monorepo managing a Caddy reverse proxy stack, Frigate NVR, Raspberry Pi
 | Service | Description |
 |---|---|
 | `dac_status.service` | USB DAC presence detector — publishes to MQTT |
+| `amp_trigger.service` | GPIO relay — controls the amp 12V trigger via MQTT |
 | `camilladsp.service` | DSP engine — EQ and processing |
 | `camillagui.service` | CamillaGUI web UI (`https://pi-cam`) |
 | `shairport-sync.service` | AirPlay receiver → ALSA Loopback → CamillaDSP |
@@ -266,12 +267,12 @@ MQTT inspection:
 
 ```bash
 mosquitto_sub -h MQTT_HOST -u MQTT_USERNAME -P MQTT_PASSWORD \
-  -t 'audio/pi-cam/shairport/#' -v
+  -t 'pi-cam/shairport/#' -v
 ```
 
 Expected `pi-cam` behavior:
 
-- The base Shairport topic is `audio/pi-cam/shairport`.
+- The base Shairport topic is `pi-cam/shairport`.
 - AirPlay-requested volume should be published to MQTT in the format emitted by
   the installed `shairport-sync` build, including mute sentinels if present.
 - `shairport-sync.service` is ordered after `camilladsp.service` so playback
