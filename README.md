@@ -8,7 +8,7 @@ Homelab monorepo managing a Caddy reverse proxy stack, Frigate NVR, Raspberry Pi
 |---|---|
 | `beelink.local` | Main server — Caddy, AdGuard, Immich, Beszel Hub |
 | `aswitch.local` | Audio Pi — Shairport, CamillaDSP, GPIO relay services |
-| `pi-cam.local` | Lounge Pi — Shairport, CamillaDSP, DAC status service |
+| `pi-cam.local` | Lounge Pi — Shairport, CamillaDSP, DAC status, amp-trigger relay |
 
 ## Services
 
@@ -26,6 +26,7 @@ Homelab monorepo managing a Caddy reverse proxy stack, Frigate NVR, Raspberry Pi
 | UniFi | `https://unifi` | Network management |
 | Beszel | `https://beszel` | Node monitoring |
 | Uptime Kuma | `https://uptime` | HTTP endpoint monitoring |
+| Grafana | `https://grafana` | Central log exploration and dashboards |
 
 ### aswitch.local (systemd)
 
@@ -42,6 +43,7 @@ Homelab monorepo managing a Caddy reverse proxy stack, Frigate NVR, Raspberry Pi
 | Service | Description |
 |---|---|
 | `dac_status.service` | USB DAC presence detector — publishes to MQTT |
+| `amp_trigger.service` | GPIO relay — controls the amp 12V trigger via MQTT |
 | `camilladsp.service` | DSP engine — EQ and processing |
 | `camillagui.service` | CamillaGUI web UI (`https://pi-cam`) |
 | `shairport-sync.service` | AirPlay receiver → ALSA Loopback → CamillaDSP |
@@ -236,6 +238,80 @@ path is:
 AirPlay -> Shairport Sync -> ALSA Loopback -> CamillaDSP -> Fosi ZD3 -> amp
 ```
 
+The `pi_wifi` role disables Wi-Fi power saving on pi-cam's existing
+NetworkManager connection (`preconfigured`). It intentionally leaves the SSID
+and password unmanaged, so UniFi remains the source of truth for network
+policy. If the connection name changes, override `pi_wifi_connection_name` in
+`ansible/group_vars/pi_cam.yml`. NetworkManager applies the power-save setting
+when the connection next activates, so the role does not interrupt an active
+Wi-Fi session to force it.
+
+## Centralized logs
+
+Grafana and Loki run on the Beelink. Grafana Alloy runs as a systemd agent on
+the Beelink and both Pis. Alloy forwards each host's systemd journal, including
+kernel, NetworkManager, and application-service events. On the Beelink, Alloy
+also discovers and forwards every Docker container's logs; individual Compose
+services need no additional logging configuration.
+
+Loki retains logs for 14 days. Grafana is available at `https://grafana` and
+`https://grafana.home.arpa`. Loki's unauthenticated ingest API is intentionally
+LAN-only at `http://loki.home.arpa:3100`; do not expose port 3100 to the
+internet.
+
+### Setup and deployment
+
+Before deploying the stack, create a `Grafana` item in the `Homelab` 1Password
+vault with a `password` field and set this reference in the untracked
+`ansible/group_vars/townhaus_caddy/main.yml`:
+
+```yaml
+townhaus_caddy_grafana_admin_password_ref: op://Homelab/Grafana/password
+```
+
+Deploy the stack and agents:
+
+```bash
+just deploy-beelink
+just deploy-aswitch
+just deploy-pi-cam
+```
+
+After a configuration update, verify the collector path from a Pi:
+
+```bash
+getent hosts loki.home.arpa
+curl -fsS http://loki.home.arpa:3100/ready
+sudo systemctl status alloy --no-pager
+sudo journalctl -u alloy -n 100 --no-pager
+```
+
+The first Alloy start forwards up to 24 hours of available journal entries;
+new entries normally appear in Grafana within 10–30 seconds.
+
+### Exploring logs
+
+Sign in at `https://grafana` as `admin` using that 1Password password. Open
+**Explore**, select the automatically provisioned **Loki** data source, and use
+LogQL queries such as:
+
+```logql
+{host="pi-cam.local"}
+{host="pi-cam.local", unit="NetworkManager.service"}
+{host="pi-cam.local"} |= "wlan0"
+{host="beelink.local", job="docker"}
+{host="beelink.local", job="docker", container="caddy"}
+```
+
+If Grafana reports it cannot resolve `loki`, check that the Loki container is
+healthy on the Beelink:
+
+```bash
+cd /srv/docker/townhaus-caddy
+docker compose ps loki grafana
+docker compose logs --tail=100 loki
+```
+
 For `pi-cam`, Shairport Sync is configured to publish MQTT metadata while
 leaving the PCM stream at full scale. Home Assistant should consume the raw
 AirPlay volume metadata from MQTT and translate that into ZD3 IR volume
@@ -266,12 +342,12 @@ MQTT inspection:
 
 ```bash
 mosquitto_sub -h MQTT_HOST -u MQTT_USERNAME -P MQTT_PASSWORD \
-  -t 'audio/pi-cam/shairport/#' -v
+  -t 'pi-cam/shairport/#' -v
 ```
 
 Expected `pi-cam` behavior:
 
-- The base Shairport topic is `audio/pi-cam/shairport`.
+- The base Shairport topic is `pi-cam/shairport`.
 - AirPlay-requested volume should be published to MQTT in the format emitted by
   the installed `shairport-sync` build, including mute sentinels if present.
 - `shairport-sync.service` is ordered after `camilladsp.service` so playback

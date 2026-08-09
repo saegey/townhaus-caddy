@@ -2,8 +2,8 @@ mqtt:
   switch:
     - name: "Amp Power"
       unique_id: aswitch_amp_power
-      command_topic: "aswitch/trigger"
-      state_topic: "aswitch/trigger/state"
+      command_topic: "pi-cam/trigger"
+      state_topic: "pi-cam/trigger/state"
       payload_on: "on"
       payload_off: "off"
 
@@ -22,6 +22,16 @@ mqtt:
       payload_off: "off"
 
   binary_sensor:
+    - name: "Preamp Power"
+      unique_id: "aswitch_preamp_power"
+      state_topic: "aswitch/preamp/trigger/state"
+      payload_on: "on"
+      payload_off: "off"
+      availability_topic: "aswitch/preamp/trigger/availability"
+      payload_available: "online"
+      payload_not_available: "offline"
+      device_class: power
+
     - name: "Mixer Audio Activity"
       unique_id: "aswitch_mixer_audio_activity"
       state_topic: "aswitch/audio_activity/state"
@@ -39,3 +49,20 @@ mqtt:
       payload_not_available: "offline"
       device_class: connectivity
       icon: "mdi:usb-port"
+
+  sensor:
+    - name: "Preamp LED"
+      unique_id: "aswitch_preamp_led"
+      state_topic: "aswitch/preamp/led/state"
+      availability_topic: "aswitch/preamp/led/availability"
+      payload_available: "online"
+      payload_not_available: "offline"
+      icon: "mdi:led-on"
+
+    - name: "Preamp Input"
+      unique_id: "aswitch_preamp_input"
+      state_topic: "aswitch/preamp/input/state"
+      availability_topic: "aswitch/preamp/led/availability"
+      payload_available: "online"
+      payload_not_available: "offline"
+      icon: "mdi:audio-input-stereo-minijack"

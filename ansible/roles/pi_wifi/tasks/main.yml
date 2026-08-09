@@ -1,0 +1,43 @@
+---
+- name: Read the NetworkManager Wi-Fi power-save setting
+  ansible.builtin.command:
+    argv:
+      - nmcli
+      - --terse
+      - --get-values
+      - 802-11-wireless.powersave
+      - connection
+      - show
+      - "{{ pi_wifi_connection_name }}"
+  register: pi_wifi_powersave_current
+  changed_when: false
+  become: true
+
+- name: Disable Wi-Fi power saving on the existing connection
+  ansible.builtin.command:
+    argv:
+      - nmcli
+      - connection
+      - modify
+      - "{{ pi_wifi_connection_name }}"
+      - 802-11-wireless.powersave
+      - "{{ pi_wifi_powersave | string }}"
+  when: pi_wifi_powersave_current.stdout | trim not in pi_wifi_powersave_expected_values
+  register: pi_wifi_powersave_modified
+  changed_when: true
+  become: true
+
+- name: Verify saved Wi-Fi power-save setting
+  ansible.builtin.command:
+    argv:
+      - nmcli
+      - --terse
+      - --get-values
+      - 802-11-wireless.powersave
+      - connection
+      - show
+      - "{{ pi_wifi_connection_name }}"
+  register: pi_wifi_powersave_status
+  changed_when: false
+  failed_when: pi_wifi_powersave_status.stdout | trim not in pi_wifi_powersave_expected_values
+  become: true

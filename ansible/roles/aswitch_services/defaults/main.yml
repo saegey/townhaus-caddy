@@ -5,6 +5,8 @@ aswitch_services_source_files:
   - "{{ playbook_dir }}/../../services/aswitch/dac_status.py"
   - "{{ playbook_dir }}/../../services/aswitch/ir_logger.py"
   - "{{ playbook_dir }}/../../services/aswitch/preamp_ir_codes.py"
+  - "{{ playbook_dir }}/../../services/aswitch/preamp_trigger.py"
+  - "{{ playbook_dir }}/../../services/aswitch/preamp_led.py"
 
 aswitch_services_disabled_services: []
 aswitch_services_pigpio_src_dir: /usr/local/src/pigpio

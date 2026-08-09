@@ -1,0 +1,12 @@
+---
+# Name of the existing NetworkManager connection on pi-cam. The role changes
+# only the power-save property; it deliberately does not manage the SSID or
+# its PSK.
+pi_wifi_connection_name: preconfigured
+pi_wifi_interface: wlan0
+pi_wifi_powersave: 2
+# nmcli accepts the numeric setting above but reports it as the canonical
+# string value "disable" when reading the profile back.
+pi_wifi_powersave_expected_values:
+  - "2"
+  - disable

@@ -1,0 +1,70 @@
+---
+- name: Install prerequisites for the Grafana APT repository
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - gpg
+    state: present
+    update_cache: true
+  become: true
+
+- name: Install Grafana APT repository signing key
+  ansible.builtin.get_url:
+    url: https://apt.grafana.com/gpg-full.key
+    dest: /etc/apt/keyrings/grafana.asc
+    mode: "0644"
+  become: true
+
+- name: Configure Grafana APT repository
+  ansible.builtin.apt_repository:
+    repo: deb [signed-by=/etc/apt/keyrings/grafana.asc] https://apt.grafana.com stable main
+    filename: grafana
+    state: present
+  become: true
+
+- name: Install Grafana Alloy
+  ansible.builtin.apt:
+    name: alloy
+    state: present
+    update_cache: true
+  become: true
+
+- name: Allow Alloy to read the system journal
+  ansible.builtin.user:
+    name: alloy
+    groups:
+      - adm
+      - systemd-journal
+    append: true
+  become: true
+  notify: Restart Alloy
+
+- name: Allow Alloy to read Docker logs
+  ansible.builtin.user:
+    name: alloy
+    groups: docker
+    append: true
+  become: true
+  when: alloy_collect_docker | bool
+  notify: Restart Alloy
+
+- name: Configure Grafana Alloy
+  ansible.builtin.template:
+    src: config.alloy.j2
+    dest: /etc/alloy/config.alloy
+    owner: root
+    group: alloy
+    mode: "0640"
+  become: true
+  notify: Restart Alloy
+
+- name: Enable and start Grafana Alloy
+  ansible.builtin.systemd:
+    name: alloy.service
+    enabled: true
+    state: started
+    daemon_reload: true
+  become: true
+
+- name: Apply Grafana Alloy configuration before later roles run
+  ansible.builtin.meta: flush_handlers

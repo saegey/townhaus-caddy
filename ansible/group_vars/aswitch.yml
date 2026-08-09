@@ -26,6 +26,14 @@ aswitch_services:
       - pigpiod.service
     wants:
       - pigpiod.service
+  - name: preamp_trigger
+    script: preamp_trigger.py
+    after:
+      - pigpiod.service
+    wants:
+      - pigpiod.service
+  - name: preamp_led
+    script: preamp_led.py
 
 aswitch_services_disabled_services:
   - aswitch
@@ -49,12 +57,29 @@ aswitch_env_extra:
   IR_TOPIC_SENT: "aswitch/ir/sent"
   IR_TX_FREQUENCY_HZ: "38000"
   IR_TX_REPEAT_COUNT: "1"
+  PREAMP_TRIGGER_GPIO: "23"
+  PREAMP_TRIGGER_GLITCH_FILTER_US: "20000"
+  PREAMP_TRIGGER_STATE_TOPIC: aswitch/preamp/trigger/state
+  PREAMP_TRIGGER_AVAILABILITY_TOPIC: aswitch/preamp/trigger/availability
+  TCS34725_I2C_BUS: "1"
+  TCS34725_I2C_ADDRESS: "0x29"
+  TCS34725_INTEGRATION_TIME: "0xD6"
+  TCS34725_GAIN: "0x01"
+  PREAMP_LED_SAMPLE_INTERVAL_SECONDS: "1"
+  PREAMP_LED_OFF_CLEAR_THRESHOLD: "10"
+  PREAMP_LED_COLOR_DOMINANCE_RATIO: "1.5"
+  PREAMP_INPUT_BLUE_STATE: input_1
+  PREAMP_INPUT_RED_STATE: input_2
+  PREAMP_LED_STATE_TOPIC: aswitch/preamp/led/state
+  PREAMP_INPUT_STATE_TOPIC: aswitch/preamp/input/state
+  PREAMP_LED_RGB_TOPIC: aswitch/preamp/led/rgb
+  PREAMP_LED_AVAILABILITY_TOPIC: aswitch/preamp/led/availability
 
 shairport_name: aswitch
 shairport_alsa_output: "hw:Loopback,0,0"
 shairport_mqtt_topic: aswitch/shairport
 shairport_mqtt_publish_parsed: "yes"
-shairport_mqtt_publish_cover: "no"
+shairport_mqtt_publish_cover: "yes"
 
 camilladsp_capture_device: "hw:Loopback,1"
 camilladsp_playback_device: "plughw:CARD=AUDIO,DEV=0"

@@ -23,6 +23,8 @@ Aswitch is a Raspberry Pi-controlled audio switching and amplifier trigger syste
 | `audio_activity.py` | USB audio RMS detector — publishes active/inactive state, optional WAV recording |
 | `ir_logger.py` | VS1838B IR receiver + IR LED blaster — receives raw frames and sends learned preamp commands via MQTT |
 | `preamp_ir_codes.py` | Learned preamp IR fingerprint map used to tag known buttons |
+| `preamp_trigger.py` | HY-M154 optocoupler monitor — publishes the preamp's physical 12V trigger state |
+| `preamp_led.py` | TCS34725 monitor — publishes preamp LED color, inferred input state, and raw RGB readings |
 | `deploy/aswitch.service` | systemd unit for relay control |
 | `deploy/audio_activity.service` | systemd unit for audio activity detection |
 | `deploy/ir_logger.service` | systemd unit for IR logging |
@@ -32,9 +34,10 @@ Aswitch is a Raspberry Pi-controlled audio switching and amplifier trigger syste
 | File | Purpose |
 |---|---|
 | `dac_status.py` | USB DAC presence detector — polls `lsusb` and publishes MQTT state |
+| `amp_trigger.py` | GPIO relay control — switches the amp 12V trigger via MQTT |
 | `deploy/dac_status.service` | systemd unit for DAC presence detection |
 
-`pi-cam.local` runs only `dac_status.py`. There is no relay switching, GPIO wiring, or audio recording on that host — amp control is handled by the ESPHome IR device.
+`pi-cam.local` runs `dac_status.py` and `amp_trigger.py`. There is no audio-source switching or audio recording on that host.
 
 ### Deploy tooling
 
@@ -102,7 +105,7 @@ Rules:
 
 ## GPIO Wiring
 
-GPIO pins use BCM numbering (`AUDIO_PIN = 17`, `TRIGGER_PIN = 27`).
+GPIO pins use BCM numbering. The audio-source relay remains on `aswitch.local` (`AUDIO_PIN = 17`); the amp trigger relay runs on `pi-cam.local` (`AMP_TRIGGER_GPIO = 27`).
 
 > **Note:** Relay polarity may vary by module. In this build both relays behaved opposite to the initial active-low assumption. Active/inactive states are defined as constants in `aswitch.py`.
 
@@ -121,6 +124,44 @@ GPIO pins use BCM numbering (`AUDIO_PIN = 17`, `TRIGGER_PIN = 27`).
 | Pin 2 / 5V | VCC | Relay DC+ |
 | Pin 6 / GND | GND | Relay DC- |
 | Pin 13 / GPIO27 | Control | Relay IN |
+
+### Preamp Trigger Sense — HY-M154 / PC817 Optocoupler
+
+The preamp's 3.5mm TS trigger output is read as an isolated GPIO input. Remove the
+channel 1 jumper on the optocoupler board to keep the preamp and Pi grounds isolated.
+
+| Connection | HY-M154 terminal |
+|---|---|
+| Preamp trigger TIP (+12V when on) | `IN1` |
+| Preamp trigger SLEEVE | input-side `G` |
+| Pi Pin 16 / GPIO23 | `V1` |
+| Pi GND | output-side `G` |
+
+The signal is active-low: `V1` is low when the preamp trigger is on.
+
+### Preamp LED Monitor — TCS34725
+
+Connect the sensor to the Pi I2C bus and mount it in a short, opaque shroud pointed at
+the preamp's status LED to exclude room light. The service uses the trigger state as a
+gate: if the preamp trigger is off, it reports the LED and input as `off`.
+
+| Pi pin | TCS34725 connection |
+|---|---|
+| Pin 1 or 17 / 3.3V | VIN / 3V3 |
+| Pin 6 / GND | GND |
+| Pin 3 / GPIO2 | SDA |
+| Pin 5 / GPIO3 | SCL |
+
+Enable I2C on the Pi before deployment, then confirm the sensor is visible at `0x29`:
+
+```sh
+sudo raspi-config nonint do_i2c 0
+i2cdetect -y 1
+```
+
+The default mapping is blue → `input_1` and red → `input_2`; adjust the environment
+values after verifying the preamp's front-panel behavior. Raw readings are published so
+the off threshold and color-dominance ratio can be calibrated without changing code.
 
 ## 12V Trigger Wiring
 
@@ -148,14 +189,18 @@ Amp on  -> ~+12V
 
 ## MQTT Topics
 
-### aswitch.py — Relay Control
+### aswitch.py — Audio Source Control
 
 | Topic | Direction | Payloads |
 |---|---|---|
 | `aswitch/audio` | command | `dac`, `mixer` |
 | `aswitch/audio/state` | state (retained) | `dac`, `mixer` |
-| `aswitch/trigger` | command | `on`, `off` |
-| `aswitch/trigger/state` | state (retained) | `on`, `off` |
+### amp_trigger.py — Amp Trigger Control (`pi-cam.local`)
+
+| Topic | Direction | Payloads |
+|---|---|---|
+| `pi-cam/trigger` | command | `on`, `off` |
+| `pi-cam/trigger/state` | state (retained) | `on`, `off` |
 
 ### audio_activity.py — Audio Monitor
 
@@ -176,6 +221,22 @@ Amp on  -> ~+12V
 | `aswitch/dac/zd3/details` | state (retained) | matching `lsusb` line |
 | `aswitch/dac/zd3/availability` | availability (retained) | `online`, `offline` |
 | `aswitch/dac/zd3/command` | command | `start` |
+
+### preamp_trigger.py — Preamp 12V Trigger Sense
+
+| Topic | Direction | Payloads |
+|---|---|---|
+| `aswitch/preamp/trigger/state` | state (retained) | `on`, `off` |
+| `aswitch/preamp/trigger/availability` | availability (retained) | `online`, `offline` |
+
+### preamp_led.py — Preamp LED and Input Sense
+
+| Topic | Direction | Payloads |
+|---|---|---|
+| `aswitch/preamp/led/state` | state (retained) | `red`, `blue`, `off`, `unknown` |
+| `aswitch/preamp/input/state` | state (retained) | `input_1`, `input_2`, `off`, `unknown` |
+| `aswitch/preamp/led/rgb` | debug (retained) | JSON object with `clear`, `red`, `green`, `blue` raw counts |
+| `aswitch/preamp/led/availability` | availability (retained) | `online`, `offline` |
 
 Publishing `start` to the command topic immediately triggers `systemctl start camilladsp.service`, bypassing the 30-second recovery timer. Intended for use from a Home Assistant automation when AirPlay playback begins — see [`home_assistant/camilladsp_trigger.yaml`](home_assistant/camilladsp_trigger.yaml).
 
@@ -208,8 +269,8 @@ mqtt:
   switch:
     - name: "Amp Power"
       unique_id: aswitch_amp_power
-      command_topic: "aswitch/trigger"
-      state_topic: "aswitch/trigger/state"
+      command_topic: "pi-cam/trigger"
+      state_topic: "pi-cam/trigger/state"
       payload_on: "on"
       payload_off: "off"
 

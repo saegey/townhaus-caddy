@@ -1,6 +1,6 @@
 # AGENTS.md — aswitch
 
-Raspberry Pi MQTT relay controller and audio monitoring suite. Three independent Python services run on one or more Pis and publish state to Home Assistant via MQTT.
+Raspberry Pi MQTT relay controller and audio monitoring suite. Independent Python services run on one or more Pis and publish state to Home Assistant via MQTT.
 
 ## Services
 
@@ -11,6 +11,8 @@ Raspberry Pi MQTT relay controller and audio monitoring suite. Three independent
 | `aswitch.py` | `aswitch.service` | GPIO relay switch — routes audio source (DAC vs mixer) and controls a trigger output via MQTT commands |
 | `audio_activity.py` | `audio_activity.service` | USB audio RMS detector — publishes active/inactive state, debug RMS values, and optionally records WAV files |
 | `ir_logger.py` | `ir_logger.service` | VS1838B IR receiver + blaster — publishes received raw frames and sends learned preamp commands via MQTT |
+| `preamp_trigger.py` | `preamp_trigger.service` | HY-M154 optocoupler monitor — publishes the preamp's physical 12V trigger state |
+| `preamp_led.py` | `preamp_led.service` | TCS34725 monitor — publishes preamp LED color, input state, and raw RGB readings |
 | `preamp_ir_codes.py` | n/a | Learned fingerprint map for recognized preamp remote buttons |
 
 ### `pi-cam.local`
@@ -18,8 +20,9 @@ Raspberry Pi MQTT relay controller and audio monitoring suite. Three independent
 | File | Systemd unit | Purpose |
 |---|---|---|
 | `dac_status.py` | `dac_status.service` | USB DAC presence detector — polls `lsusb` and publishes connected/disconnected state |
+| `amp_trigger.py` | `amp_trigger.service` | GPIO relay switch — controls the amp 12V trigger via MQTT |
 
-`pi-cam.local` runs only `dac_status.py`. No relay switching, GPIO, or audio recording — amp control is handled by the ESPHome IR blaster (`esphome/fosi-zd3-ir.yaml`).
+`pi-cam.local` runs the DAC status monitor and amp trigger relay. It has no audio-source switching or audio recording.
 
 ## Key patterns
 
