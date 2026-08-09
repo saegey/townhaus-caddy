@@ -34,6 +34,10 @@ adguard_dns_rewrites:
   - domain: beszel.home.arpa
   - domain: uptime
   - domain: uptime.home.arpa
+  - domain: grafana
+  - domain: grafana.home.arpa
+  - domain: loki
+  - domain: loki.home.arpa
   - domain: aswitch
     answer: "192.168.2.170"
   - domain: aswitch.home.arpa

@@ -12,6 +12,9 @@ townhaus_caddy_pull_images: true
 # Replace this placeholder before running the playbook.
 townhaus_caddy_immich_db_password_ref: op://Vault/Item/field
 
+# Required: 1Password secret reference for Grafana's initial admin password.
+townhaus_caddy_grafana_admin_password_ref: op://Homelab/Grafana/password
+
 nfs_music_path: /srv/music
 nfs_allowed_networks:
   - 192.168.2.0/24
@@ -38,3 +41,4 @@ townhaus_caddy_env:
   IMMICH_DB_DATABASE_NAME: immich
   IMMICH_REDIS_HOSTNAME: immich-redis
   IMMICH_REDIS_PORT: "6379"
+  GRAFANA_ADMIN_PASSWORD: "{{ townhaus_caddy_grafana_admin_password }}"

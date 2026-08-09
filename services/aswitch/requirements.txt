@@ -3,3 +3,4 @@ paho-mqtt
 numpy
 sounddevice
 pigpio
+smbus2

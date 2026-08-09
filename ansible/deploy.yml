@@ -50,6 +50,16 @@
           (`op whoami`) and that the secret reference works locally:
           `op read "{{ townhaus_caddy_immich_db_password_ref }}"`.
 
+    - name: Require a Grafana admin password reference
+      ansible.builtin.assert:
+        that:
+          - townhaus_caddy_grafana_admin_password_ref is defined
+          - townhaus_caddy_grafana_admin_password_ref | length > 0
+          - townhaus_caddy_grafana_admin_password_ref != "op://Vault/Item/field"
+        fail_msg: >-
+          Define townhaus_caddy_grafana_admin_password_ref as a 1Password secret reference,
+          for example op://Homelab/Grafana/password.
+
     - name: Store resolved Immich DB password on first host
       ansible.builtin.set_fact:
         townhaus_caddy_immich_db_password_shared: "{{ townhaus_caddy_immich_db_password_result.stdout }}"
@@ -59,6 +69,41 @@
     - name: Store resolved Immich DB password
       ansible.builtin.set_fact:
         townhaus_caddy_immich_db_password: "{{ hostvars[ansible_play_hosts_all[0]].townhaus_caddy_immich_db_password_shared }}"
+      no_log: true
+
+    - name: Resolve Grafana admin password from 1Password CLI
+      ansible.builtin.command:
+        argv:
+          - op
+          - read
+          - "{{ townhaus_caddy_grafana_admin_password_ref }}"
+      delegate_to: localhost
+      vars:
+        ansible_python_interpreter: "{{ ansible_playbook_python }}"
+      when: inventory_hostname == ansible_play_hosts_all[0]
+      register: townhaus_caddy_grafana_admin_password_result
+      changed_when: false
+      failed_when: false
+      no_log: true
+
+    - name: Require successful Grafana password resolution
+      ansible.builtin.assert:
+        that:
+          - hostvars[ansible_play_hosts_all[0]].townhaus_caddy_grafana_admin_password_result.rc == 0
+          - hostvars[ansible_play_hosts_all[0]].townhaus_caddy_grafana_admin_password_result.stdout | length > 0
+        fail_msg: >-
+          Failed to resolve townhaus_caddy_grafana_admin_password_ref with `op read`
+          on the control machine.
+
+    - name: Store resolved Grafana admin password on first host
+      ansible.builtin.set_fact:
+        townhaus_caddy_grafana_admin_password_shared: "{{ townhaus_caddy_grafana_admin_password_result.stdout }}"
+      when: inventory_hostname == ansible_play_hosts_all[0]
+      no_log: true
+
+    - name: Store resolved Grafana admin password
+      ansible.builtin.set_fact:
+        townhaus_caddy_grafana_admin_password: "{{ hostvars[ansible_play_hosts_all[0]].townhaus_caddy_grafana_admin_password_shared }}"
       no_log: true
   tasks:
     - name: Ensure app directory exists
@@ -116,6 +161,17 @@
         mode: preserve
       become: true
 
+    - name: Copy observability assets
+      ansible.builtin.copy:
+        src: ../services/observability/
+        dest: "{{ townhaus_caddy_app_dir }}/services/observability/"
+        owner: "{{ townhaus_caddy_owner }}"
+        group: "{{ townhaus_caddy_group }}"
+        mode: "0644"
+        directory_mode: "0755"
+      become: true
+      notify: Recreate observability services
+
     - name: Copy Caddyfile
       ansible.builtin.copy:
         src: ../Caddyfile
@@ -123,7 +179,7 @@
         owner: "{{ townhaus_caddy_owner }}"
         group: "{{ townhaus_caddy_group }}"
         mode: "0644"
-      notify: Reload Caddy
+      notify: Recreate Caddy
 
     - name: Render environment file
       ansible.builtin.template:
@@ -194,16 +250,33 @@
         var: townhaus_caddy_ps_result.stdout_lines
 
   handlers:
-    - name: Reload Caddy
+    - name: Recreate observability services
       ansible.builtin.command:
         argv:
           - docker
-          - exec
+          - compose
+          - -p
+          - "{{ townhaus_caddy_compose_project_name }}"
+          - up
+          - -d
+          - --force-recreate
+          - loki
+          - grafana
+      args:
+        chdir: "{{ townhaus_caddy_app_dir }}"
+      changed_when: true
+
+    - name: Recreate Caddy
+      ansible.builtin.command:
+        argv:
+          - docker
+          - compose
+          - -p
+          - "{{ townhaus_caddy_compose_project_name }}"
+          - up
+          - -d
+          - --force-recreate
           - caddy
-          - caddy
-          - reload
-          - --config
-          - /etc/caddy/Caddyfile
-          - --adapter
-          - caddyfile
-      changed_when: false
+      args:
+        chdir: "{{ townhaus_caddy_app_dir }}"
+      changed_when: true

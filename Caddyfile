@@ -123,6 +123,14 @@ uptime, uptime.home.arpa {
 	reverse_proxy http://uptime-kuma:3001
 }
 
+# Grafana log exploration and dashboards:
+# - https://grafana
+# - https://grafana.home.arpa
+grafana, grafana.home.arpa {
+	import common
+	reverse_proxy http://grafana:3000
+}
+
 # Beszel monitoring hub:
 # - https://beszel
 # - https://beszel.home.arpa

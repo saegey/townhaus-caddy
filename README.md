@@ -26,6 +26,7 @@ Homelab monorepo managing a Caddy reverse proxy stack, Frigate NVR, Raspberry Pi
 | UniFi | `https://unifi` | Network management |
 | Beszel | `https://beszel` | Node monitoring |
 | Uptime Kuma | `https://uptime` | HTTP endpoint monitoring |
+| Grafana | `https://grafana` | Central log exploration and dashboards |
 
 ### aswitch.local (systemd)
 
@@ -235,6 +236,48 @@ path is:
 
 ```text
 AirPlay -> Shairport Sync -> ALSA Loopback -> CamillaDSP -> Fosi ZD3 -> amp
+```
+
+The `pi_wifi` role disables Wi-Fi power saving on pi-cam's existing
+NetworkManager connection (`preconfigured`). It intentionally leaves the SSID
+and password unmanaged, so UniFi remains the source of truth for network
+policy. If the connection name changes, override `pi_wifi_connection_name` in
+`ansible/group_vars/pi_cam.yml`. NetworkManager applies the power-save setting
+when the connection next activates, so the role does not interrupt an active
+Wi-Fi session to force it.
+
+## Centralized logs
+
+Grafana and Loki run on `beelink.local`; Grafana Alloy runs as a systemd agent
+on the Beelink and both Pis. Alloy forwards each host's systemd journal, and
+also collects Docker container logs on the Beelink. Loki retains logs for 14
+days. The Loki ingest API is available only on the LAN at
+`http://loki.home.arpa:3100`; do not expose port 3100 to the internet.
+
+Before deploying the stack, create a `Grafana` item in the `Homelab` 1Password
+vault with a `password` field and set this reference in the untracked
+`ansible/group_vars/townhaus_caddy/main.yml`:
+
+```yaml
+townhaus_caddy_grafana_admin_password_ref: op://Homelab/Grafana/password
+```
+
+Deploy the stack and agents:
+
+```bash
+just deploy-beelink
+just deploy-aswitch
+just deploy-pi-cam
+```
+
+Sign in at `https://grafana` as `admin` using that 1Password password. Loki is
+provisioned automatically as the default data source. Useful starting queries:
+
+```logql
+{host="pi-cam"}
+{host="pi-cam", unit="NetworkManager.service"}
+{host="pi-cam"} |= "wlan0"
+{host="beelink", job="docker"}
 ```
 
 For `pi-cam`, Shairport Sync is configured to publish MQTT metadata while

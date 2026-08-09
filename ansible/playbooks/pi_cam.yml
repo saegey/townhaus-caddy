@@ -27,6 +27,8 @@
       changed_when: false
 
   roles:
+    - role: pi_wifi
+    - role: alloy
     - role: shairport
     - role: camilladsp
     - role: aswitch_services

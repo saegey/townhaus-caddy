@@ -27,6 +27,7 @@
       changed_when: false
 
   roles:
+    - role: alloy
     - role: shairport
     - role: camilladsp
     - role: aswitch_services

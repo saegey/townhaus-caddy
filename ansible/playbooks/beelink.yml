@@ -27,6 +27,9 @@
       changed_when: false
 
   roles:
+    - role: alloy
+      vars:
+        alloy_collect_docker: true
     - role: beszel_hub
     - role: adguard_dns
     - role: beszel_agent

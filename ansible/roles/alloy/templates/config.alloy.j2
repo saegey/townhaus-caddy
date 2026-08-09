@@ -1,0 +1,63 @@
+logging {
+  level = "info"
+}
+
+loki.write "homelab" {
+  external_labels = {
+    host = "{{ alloy_host_label }}",
+  }
+
+  endpoint {
+    url = "{{ alloy_loki_url }}"
+  }
+}
+
+loki.relabel "journal" {
+  forward_to = []
+
+  rule {
+    source_labels = ["__journal__systemd_unit"]
+    target_label  = "unit"
+  }
+
+  rule {
+    source_labels = ["__journal_syslog_identifier"]
+    target_label  = "syslog_identifier"
+  }
+
+  rule {
+    source_labels = ["__journal_priority_keyword"]
+    target_label  = "level"
+  }
+}
+
+loki.source.journal "system" {
+  forward_to    = [loki.write.homelab.receiver]
+  relabel_rules = loki.relabel.journal.rules
+  max_age       = "{{ alloy_journal_max_age }}"
+  labels        = {job = "systemd-journal"}
+}
+{% if alloy_collect_docker | bool %}
+
+discovery.docker "local" {
+  host = "unix:///var/run/docker.sock"
+}
+
+loki.relabel "docker" {
+  forward_to = []
+
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/(.*)"
+    target_label  = "container"
+  }
+}
+
+loki.source.docker "containers" {
+  host          = "unix:///var/run/docker.sock"
+  targets       = discovery.docker.local.targets
+  relabel_rules = loki.relabel.docker.rules
+  labels        = {job = "docker"}
+  forward_to    = [loki.write.homelab.receiver]
+}
+{% endif %}
