@@ -248,11 +248,18 @@ Wi-Fi session to force it.
 
 ## Centralized logs
 
-Grafana and Loki run on `beelink.local`; Grafana Alloy runs as a systemd agent
-on the Beelink and both Pis. Alloy forwards each host's systemd journal, and
-also collects Docker container logs on the Beelink. Loki retains logs for 14
-days. The Loki ingest API is available only on the LAN at
-`http://loki.home.arpa:3100`; do not expose port 3100 to the internet.
+Grafana and Loki run on the Beelink. Grafana Alloy runs as a systemd agent on
+the Beelink and both Pis. Alloy forwards each host's systemd journal, including
+kernel, NetworkManager, and application-service events. On the Beelink, Alloy
+also discovers and forwards every Docker container's logs; individual Compose
+services need no additional logging configuration.
+
+Loki retains logs for 14 days. Grafana is available at `https://grafana` and
+`https://grafana.home.arpa`. Loki's unauthenticated ingest API is intentionally
+LAN-only at `http://loki.home.arpa:3100`; do not expose port 3100 to the
+internet.
+
+### Setup and deployment
 
 Before deploying the stack, create a `Grafana` item in the `Homelab` 1Password
 vault with a `password` field and set this reference in the untracked
@@ -270,14 +277,39 @@ just deploy-aswitch
 just deploy-pi-cam
 ```
 
-Sign in at `https://grafana` as `admin` using that 1Password password. Loki is
-provisioned automatically as the default data source. Useful starting queries:
+After a configuration update, verify the collector path from a Pi:
+
+```bash
+getent hosts loki.home.arpa
+curl -fsS http://loki.home.arpa:3100/ready
+sudo systemctl status alloy --no-pager
+sudo journalctl -u alloy -n 100 --no-pager
+```
+
+The first Alloy start forwards up to 24 hours of available journal entries;
+new entries normally appear in Grafana within 10–30 seconds.
+
+### Exploring logs
+
+Sign in at `https://grafana` as `admin` using that 1Password password. Open
+**Explore**, select the automatically provisioned **Loki** data source, and use
+LogQL queries such as:
 
 ```logql
-{host="pi-cam"}
-{host="pi-cam", unit="NetworkManager.service"}
-{host="pi-cam"} |= "wlan0"
-{host="beelink", job="docker"}
+{host="pi-cam.local"}
+{host="pi-cam.local", unit="NetworkManager.service"}
+{host="pi-cam.local"} |= "wlan0"
+{host="beelink.local", job="docker"}
+{host="beelink.local", job="docker", container="caddy"}
+```
+
+If Grafana reports it cannot resolve `loki`, check that the Loki container is
+healthy on the Beelink:
+
+```bash
+cd /srv/docker/townhaus-caddy
+docker compose ps loki grafana
+docker compose logs --tail=100 loki
 ```
 
 For `pi-cam`, Shairport Sync is configured to publish MQTT metadata while
