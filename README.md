@@ -27,6 +27,7 @@ Homelab monorepo managing a Caddy reverse proxy stack, Frigate NVR, Raspberry Pi
 | Beszel | `https://beszel` | Node monitoring |
 | Uptime Kuma | `https://uptime` | HTTP endpoint monitoring |
 | Grafana | `https://grafana` | Central log exploration and dashboards |
+| PVR | `https://pvr` | Website-change monitor |
 
 ### aswitch.local (systemd)
 
