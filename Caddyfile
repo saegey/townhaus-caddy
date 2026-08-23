@@ -131,6 +131,14 @@ grafana, grafana.home.arpa {
 	reverse_proxy http://grafana:3000
 }
 
+# PVR website-change monitor:
+# - https://pvr
+# - https://pvr.home.arpa
+pvr, pvr.home.arpa {
+	import common
+	reverse_proxy http://100.117.118.15:3030
+}
+
 # Beszel monitoring hub:
 # - https://beszel
 # - https://beszel.home.arpa

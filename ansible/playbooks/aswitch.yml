@@ -28,6 +28,10 @@
 
   roles:
     - role: alloy
+      vars:
+        # aswitch currently uses the router for DNS, which does not resolve
+        # the AdGuard-managed loki.home.arpa rewrite.
+        alloy_loki_url: http://192.168.2.151:3100/loki/api/v1/push
     - role: shairport
     - role: camilladsp
     - role: aswitch_services
