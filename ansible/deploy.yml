@@ -93,7 +93,9 @@
           - hostvars[ansible_play_hosts_all[0]].townhaus_caddy_grafana_admin_password_result.stdout | length > 0
         fail_msg: >-
           Failed to resolve townhaus_caddy_grafana_admin_password_ref with `op read`
-          on the control machine.
+          on the control machine. Verify that 1Password CLI is signed in
+          (`op whoami`) and that the secret reference works locally:
+          `op read "{{ townhaus_caddy_grafana_admin_password_ref }}"`.
 
     - name: Store resolved Grafana admin password on first host
       ansible.builtin.set_fact:
