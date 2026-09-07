@@ -5,7 +5,7 @@ services:
     container_name: caddy
     restart: unless-stopped
     environment:
-      GROOVENET_UPSTREAM_HOST: ${GROOVENET_UPSTREAM_HOST:-myapp}
+      GROOVENET_UPSTREAM_HOST: ${GROOVENET_UPSTREAM_HOST:-webapp}
     ports:
       - "${CADDY_HTTP_PORT:-80}:80"
       - "${CADDY_HTTPS_PORT:-443}:443"
@@ -68,7 +68,8 @@ services:
         max-file: "3"
 
   uptime-kuma:
-    image: louislam/uptime-kuma:1
+    # Track the supported Uptime Kuma v2 release line.
+    image: louislam/uptime-kuma:2
     container_name: uptime_kuma
     restart: unless-stopped
     ports:

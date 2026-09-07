@@ -49,7 +49,7 @@ uptime_kuma_monitors:
   - name: Frigate
     url: http://192.168.2.151:5000
   - name: Groovenet
-    url: http://myapp:3000
+    url: http://webapp:3000
   - name: Home Assistant
     url: http://192.168.1.x:8123
   - name: aswitch

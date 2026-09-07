@@ -126,7 +126,7 @@ cp ansible/group_vars/townhaus_caddy/beszel.yml.example ansible/group_vars/townh
 | `Backblaze Immich` | `key_id`, `application_key`, `restic_password` |
 | `MQTT` | `username`, `password` |
 | `AdGuard` | `username`, `password` |
-| `Frigate` | `mqtt_password`, `doorbell_rtsp_url`, `doorbell_talk_rtsp_url`, `backyard_rtsp_url`, `backyard_rtsp_sub_url`, `homekit_pin` |
+| `Frigate` | `mqtt_password`, `doorbell_rtsp_url`, `doorbell_talk_rtsp_url`, `backyard_rtsp_url`, `backyard_rtsp_sub_url`, `oficina_rtsp_url`, `oficina_rtsp_sub_url`, `homekit_pin` |
 
 ## Deploying
 
@@ -169,7 +169,7 @@ available when only the Compose stack or host roles need to change.
 For Beelink, deploy the Caddy stack through Ansible. The playbook renders the
 remote `.env` from `ansible/group_vars/townhaus_caddy/main.yml` and should
 carry `GROOVENET_DOCKER_NETWORK=dj-playlist_default` and
-`GROOVENET_UPSTREAM_HOST=myapp` there. The playbook also creates the shared
+`GROOVENET_UPSTREAM_HOST=webapp` there. The playbook also creates the shared
 Docker network if it does not already exist.
 
 If you intentionally start only Caddy locally instead of using Ansible, pass
@@ -177,7 +177,7 @@ those values in the shell environment, for example:
 
 ```bash
 GROOVENET_DOCKER_NETWORK=dj-playlist_default \
-GROOVENET_UPSTREAM_HOST=myapp \
+GROOVENET_UPSTREAM_HOST=webapp \
 docker compose up -d caddy
 ```
 
@@ -458,6 +458,15 @@ treating the backup as production-ready.
 ## AdGuard DNS
 
 DNS rewrites are managed declaratively in `ansible/group_vars/townhaus_caddy/beszel.yml` under `adguard_dns_rewrites`. All short hostnames resolve to beelink's LAN IP; Caddy handles the reverse proxy. Run the beelink playbook to apply changes.
+
+## Uptime Kuma upgrades
+
+Uptime Kuma tracks the supported v2 image tag. On the first deployment from v1,
+the stack temporarily stops Uptime Kuma and creates a consistent archive of its
+Docker data volume at `/srv/storage/uptime-kuma-backups/uptime-kuma-v1-pre-upgrade.tar.gz`
+before pulling and starting v2. Copy this archive off the Beelink before the
+upgrade if it is needed for disaster recovery; it is a local rollback backup,
+not an off-site backup.
 
 ## Beszel monitoring
 
