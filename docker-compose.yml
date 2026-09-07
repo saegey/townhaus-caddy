@@ -68,7 +68,8 @@ services:
         max-file: "3"
 
   uptime-kuma:
-    image: louislam/uptime-kuma:1
+    # Track the supported Uptime Kuma v2 release line.
+    image: louislam/uptime-kuma:2
     container_name: uptime_kuma
     restart: unless-stopped
     ports:

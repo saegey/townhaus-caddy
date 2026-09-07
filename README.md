@@ -459,6 +459,15 @@ treating the backup as production-ready.
 
 DNS rewrites are managed declaratively in `ansible/group_vars/townhaus_caddy/beszel.yml` under `adguard_dns_rewrites`. All short hostnames resolve to beelink's LAN IP; Caddy handles the reverse proxy. Run the beelink playbook to apply changes.
 
+## Uptime Kuma upgrades
+
+Uptime Kuma tracks the supported v2 image tag. On the first deployment from v1,
+the stack temporarily stops Uptime Kuma and creates a consistent archive of its
+Docker data volume at `/srv/storage/uptime-kuma-backups/uptime-kuma-v1-pre-upgrade.tar.gz`
+before pulling and starting v2. Copy this archive off the Beelink before the
+upgrade if it is needed for disaster recovery; it is a local rollback backup,
+not an off-site backup.
+
 ## Beszel monitoring
 
 Beszel Hub runs as a Docker container on beelink (`https://beszel`). Agents run on all three hosts. The Hub's SSH public key is automatically distributed to each agent via the Ansible playbooks — no manual key copying needed.
