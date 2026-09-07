@@ -468,6 +468,10 @@ before pulling and starting v2. Copy this archive off the Beelink before the
 upgrade if it is needed for disaster recovery; it is a local rollback backup,
 not an off-site backup.
 
+The Ansible Uptime Kuma role requires the v2-compatible control-machine API
+client. Run `just pip-deps` after updating the repository and before running
+`just configure-beelink`.
+
 ## Beszel monitoring
 
 Beszel Hub runs as a Docker container on beelink (`https://beszel`). Agents run on all three hosts. The Hub's SSH public key is automatically distributed to each agent via the Ansible playbooks — no manual key copying needed.

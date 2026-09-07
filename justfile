@@ -9,7 +9,9 @@ default:
 
 # Install Python packages required by Ansible collections (uses mise Python from host_vars/localhost.yml).
 pip-deps:
-    mise which python3 | xargs -I{} {} -m pip install uptime-kuma-api
+    # The v2-compatible package preserves the uptime_kuma_api import path used
+    # by the Ansible collection while adding Uptime Kuma v2 support.
+    mise which python3 | xargs -I{} {} -m pip install --upgrade uptime-kuma-api2
 
 # Install required Ansible collections and Python packages.
 dependencies:
