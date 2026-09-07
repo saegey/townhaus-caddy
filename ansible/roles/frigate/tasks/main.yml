@@ -11,6 +11,8 @@
     - { ref: "{{ frigate_doorbell_talk_rtsp_url_ref }}" }
     - { ref: "{{ frigate_backyard_rtsp_url_ref }}" }
     - { ref: "{{ frigate_backyard_rtsp_sub_url_ref }}" }
+    - { ref: "{{ frigate_oficina_rtsp_url_ref }}" }
+    - { ref: "{{ frigate_oficina_rtsp_sub_url_ref }}" }
     - { ref: "{{ frigate_homekit_pin_ref }}" }
   register: _frigate_secrets
   changed_when: false
@@ -23,7 +25,9 @@
     _frigate_doorbell_talk_rtsp_url: "{{ _frigate_secrets.results[2].stdout }}"
     _frigate_backyard_rtsp_url: "{{ _frigate_secrets.results[3].stdout }}"
     _frigate_backyard_rtsp_sub_url: "{{ _frigate_secrets.results[4].stdout }}"
-    _frigate_homekit_pin: "{{ _frigate_secrets.results[5].stdout }}"
+    _frigate_oficina_rtsp_url: "{{ _frigate_secrets.results[5].stdout }}"
+    _frigate_oficina_rtsp_sub_url: "{{ _frigate_secrets.results[6].stdout }}"
+    _frigate_homekit_pin: "{{ _frigate_secrets.results[7].stdout }}"
   no_log: true
 
 - name: Ensure Frigate config directory exists

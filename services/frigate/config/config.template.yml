@@ -70,6 +70,30 @@ cameras:
           threshold: 0.5
           actions: []
           friendly_name: Person seen
+  oficina:
+    enabled: true
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/oficina_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+            - audio
+        - path: rtsp://127.0.0.1:8554/oficina
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+      output_args:
+        record: preset-record-generic-audio-aac
+    detect:
+      enabled: true
+      width: 640
+      height: 360
+      fps: 5
+    live:
+      streams:
+        Oficina: oficina
+        Oficina Sub: oficina_sub
 birdseye:
   enabled: true
   mode: objects
@@ -84,6 +108,10 @@ go2rtc:
       - '{FRIGATE_DOORBELL_RTSP_URL}'
       - ffmpeg:front_doorbell_talk#video=h264
       - ffmpeg:front_doorbell_talk#audio=opus
+    oficina:
+      - '{FRIGATE_OFICINA_RTSP_URL}'
+    oficina_sub:
+      - '{FRIGATE_OFICINA_RTSP_SUB_URL}'
   homekit:
     front_doorbell_talk:
       pin: "19550224"

@@ -91,6 +91,30 @@ cameras:
       streams:
         Backyard: backyard
         Backyard Sub: backyard_sub
+  oficina:
+    enabled: true
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/oficina_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+            - audio
+        - path: rtsp://127.0.0.1:8554/oficina
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+      output_args:
+        record: preset-record-generic-audio-aac
+    detect:
+      enabled: true
+      width: 640
+      height: 360
+      fps: 5
+    live:
+      streams:
+        Oficina: oficina
+        Oficina Sub: oficina_sub
 
 birdseye:
   enabled: true
@@ -112,6 +136,10 @@ go2rtc:
       - "{{ _frigate_backyard_rtsp_url }}"
     backyard_sub:
       - "{{ _frigate_backyard_rtsp_sub_url }}"
+    oficina:
+      - "{{ _frigate_oficina_rtsp_url }}"
+    oficina_sub:
+      - "{{ _frigate_oficina_rtsp_sub_url }}"
   homekit:
     front_doorbell_talk:
       pin: "{{ _frigate_homekit_pin }}"
