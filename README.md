@@ -126,7 +126,7 @@ cp ansible/group_vars/townhaus_caddy/beszel.yml.example ansible/group_vars/townh
 | `Backblaze Immich` | `key_id`, `application_key`, `restic_password` |
 | `MQTT` | `username`, `password` |
 | `AdGuard` | `username`, `password` |
-| `Frigate` | `mqtt_password`, `doorbell_rtsp_url`, `doorbell_talk_rtsp_url`, `backyard_rtsp_url`, `backyard_rtsp_sub_url`, `homekit_pin` |
+| `Frigate` | `mqtt_password`, `doorbell_rtsp_url`, `doorbell_talk_rtsp_url`, `backyard_rtsp_url`, `backyard_rtsp_sub_url`, `oficina_rtsp_url`, `oficina_rtsp_sub_url`, `homekit_pin` |
 
 ## Deploying
 
@@ -169,7 +169,7 @@ available when only the Compose stack or host roles need to change.
 For Beelink, deploy the Caddy stack through Ansible. The playbook renders the
 remote `.env` from `ansible/group_vars/townhaus_caddy/main.yml` and should
 carry `GROOVENET_DOCKER_NETWORK=dj-playlist_default` and
-`GROOVENET_UPSTREAM_HOST=myapp` there. The playbook also creates the shared
+`GROOVENET_UPSTREAM_HOST=webapp` there. The playbook also creates the shared
 Docker network if it does not already exist.
 
 If you intentionally start only Caddy locally instead of using Ansible, pass
@@ -177,7 +177,7 @@ those values in the shell environment, for example:
 
 ```bash
 GROOVENET_DOCKER_NETWORK=dj-playlist_default \
-GROOVENET_UPSTREAM_HOST=myapp \
+GROOVENET_UPSTREAM_HOST=webapp \
 docker compose up -d caddy
 ```
 

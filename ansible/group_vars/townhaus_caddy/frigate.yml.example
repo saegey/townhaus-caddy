@@ -15,4 +15,6 @@ frigate_doorbell_rtsp_url_ref: op://Homelab/Frigate/doorbell_rtsp_url
 frigate_doorbell_talk_rtsp_url_ref: op://Homelab/Frigate/doorbell_talk_rtsp_url
 frigate_backyard_rtsp_url_ref: op://Homelab/Frigate/backyard_rtsp_url
 frigate_backyard_rtsp_sub_url_ref: op://Homelab/Frigate/backyard_rtsp_sub_url
+frigate_oficina_rtsp_url_ref: op://Homelab/Frigate/oficina_rtsp_url
+frigate_oficina_rtsp_sub_url_ref: op://Homelab/Frigate/oficina_rtsp_sub_url
 frigate_homekit_pin_ref: op://Homelab/Frigate/homekit_pin

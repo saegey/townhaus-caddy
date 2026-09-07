@@ -24,7 +24,7 @@ townhaus_caddy_env:
   CADDY_HTTP_PORT: "80"
   CADDY_HTTPS_PORT: "443"
   GROOVENET_DOCKER_NETWORK: dj-playlist_default
-  GROOVENET_UPSTREAM_HOST: myapp
+  GROOVENET_UPSTREAM_HOST: webapp
   TZ: America/Los_Angeles
 
   ADGUARD_DNS_PORT: "53"
