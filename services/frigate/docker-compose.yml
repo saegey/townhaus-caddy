@@ -1,7 +1,7 @@
 services:
   frigate:
-    # Stable Frigate image for production usage.
-    image: ghcr.io/blakeblackshear/frigate:stable
+    # Pin the production release; upgrade deliberately after reviewing release notes.
+    image: ghcr.io/blakeblackshear/frigate:0.18.0
     container_name: frigate
     restart: unless-stopped
     privileged: true

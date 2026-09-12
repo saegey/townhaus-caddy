@@ -97,16 +97,19 @@ cameras:
 birdseye:
   enabled: true
   mode: objects
-version: 0.17-0
+version: 0.18-0
 go2rtc:
+  # FFmpeg 8 requires an explicit VAAPI device for hardware transcodes.
+  ffmpeg:
+    global: "-vaapi_device /dev/dri/renderD128"
   streams:
     front_doorbell:
       - '{FRIGATE_DOORBELL_RTSP_URL}#backchannel=0'
-      - ffmpeg:front_doorbell#video=h264
+      - ffmpeg:front_doorbell#video=h264#hardware
       - ffmpeg:front_doorbell#audio=opus
     front_doorbell_talk:
       - '{FRIGATE_DOORBELL_RTSP_URL}'
-      - ffmpeg:front_doorbell_talk#video=h264
+      - ffmpeg:front_doorbell_talk#video=h264#hardware
       - ffmpeg:front_doorbell_talk#audio=opus
     oficina:
       - '{FRIGATE_OFICINA_RTSP_URL}'

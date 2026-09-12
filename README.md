@@ -374,6 +374,19 @@ Frigate runs as a Docker service on beelink with `network_mode: host` (required 
 
 All credentials (MQTT password, camera RTSP URLs, HomeKit PIN) are stored in 1Password and rendered into the config at deploy time — no plaintext secrets in the repo.
 
+### Upgrade to Frigate 0.18.0
+
+`just deploy-beelink` performs the 0.18 upgrade. Before it pulls and starts the
+new pinned image, it detects a `0.17-0` runtime configuration, stops Frigate,
+and creates a consistent one-time backup at
+`/srv/storage/frigate-backups/v0.17-pre-v0.18`. This includes both `config.yml`
+and `frigate.db`.
+
+After the deploy, check the Frigate UI and logs with `just status` and
+`just logs frigate`. The config is updated for Frigate 0.18's FFmpeg 8/go2rtc
+VAAPI behavior. 0.18 also changes on-disk snapshots to clean WebP files; use
+the event snapshot API if another service requires annotated JPEG snapshots.
+
 ```bash
 # First-time setup
 cp ansible/group_vars/townhaus_caddy/frigate.yml.example ansible/group_vars/townhaus_caddy/frigate.yml
