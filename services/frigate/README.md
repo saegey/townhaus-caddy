@@ -92,7 +92,7 @@ only if the runtime config does not already exist.
 - Start: `./scripts/start.sh`
 - Stop: `./scripts/stop.sh`
 - Logs: `./scripts/logs.sh`
-- Update to latest stable image: `./scripts/update.sh`
+- Update to the pinned Frigate release: `./scripts/update.sh`
 
 ## HomeKit Notes
 
