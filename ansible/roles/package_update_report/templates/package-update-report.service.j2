@@ -1,0 +1,8 @@
+[Unit]
+Description=Publish pending package and reboot status to Home Assistant
+Wants=network-online.target
+After=network-online.target apt-daily.service apt-daily-upgrade.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/package-update-report

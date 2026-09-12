@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+source /etc/package-update-report/environment
+
+host_name="$(hostname -s)"
+entity_host="${host_name,,}"
+entity_host="${entity_host//[^a-z0-9_]/_}"
+sensor_entity="sensor.${entity_host}_package_updates"
+reboot_entity="binary_sensor.${entity_host}_reboot_required"
+notification_id="package_updates_${entity_host}"
+checked_at="$(date --iso-8601=seconds)"
+
+apt_status="ok"
+if ! /usr/bin/apt-get update -qq; then
+  apt_status="error"
+fi
+
+mapfile -t packages < <(/usr/bin/apt-get --simulate upgrade 2>/dev/null | /usr/bin/awk '/^Inst / { print $2 }')
+# Count lines rather than using Bash's array-length expansion, which conflicts
+# with Jinja template syntax in this rendered file.
+package_count="$(printf '%s\n' "${packages[@]}" | /usr/bin/sed '/^$/d' | /usr/bin/wc -l | /usr/bin/tr -d ' ')"
+package_list="$(IFS=', '; printf '%s' "${packages[*]:-}")"
+running_kernel="$(/usr/bin/uname -r)"
+kernel_meta_version="$(/usr/bin/dpkg-query -W -f='${Version}' linux-image-amd64 2>/dev/null || printf 'not installed')"
+reboot_required="false"
+[[ -e /var/run/reboot-required ]] && reboot_required="true"
+
+post_state() {
+  local entity_id="$1"
+  local state="$2"
+  local kind="$3"
+
+  ENTITY_ID="$entity_id" STATE="$state" KIND="$kind" \
+    HOST_NAME="$host_name" CHECKED_AT="$checked_at" APT_STATUS="$apt_status" \
+    PACKAGE_COUNT="$package_count" PACKAGE_LIST="$package_list" \
+    RUNNING_KERNEL="$running_kernel" KERNEL_META_VERSION="$kernel_meta_version" \
+    REBOOT_REQUIRED="$reboot_required" \
+    /usr/bin/python3 - <<'PY' | /usr/bin/curl --fail --silent --show-error --max-time 20 \
+      -H "Authorization: Bearer ${HOME_ASSISTANT_TOKEN}" \
+      -H 'Content-Type: application/json' \
+      --data-binary @- "${HOME_ASSISTANT_URL}/api/states/${entity_id}" >/dev/null
+import json
+import os
+
+attributes = {
+    "friendly_name": f"{os.environ['HOST_NAME']} package updates",
+    "last_checked": os.environ["CHECKED_AT"],
+    "apt_update": os.environ["APT_STATUS"],
+    "pending_packages": os.environ["PACKAGE_LIST"],
+    "running_kernel": os.environ["RUNNING_KERNEL"],
+    "kernel_meta_version": os.environ["KERNEL_META_VERSION"],
+    "reboot_required": os.environ["REBOOT_REQUIRED"] == "true",
+}
+if os.environ["KIND"] == "sensor":
+    attributes.update({"unit_of_measurement": "updates", "icon": "mdi:package-up"})
+else:
+    attributes.update({"device_class": "problem", "friendly_name": f"{os.environ['HOST_NAME']} reboot required"})
+print(json.dumps({"state": os.environ["STATE"], "attributes": attributes}))
+PY
+}
+
+post_state "$sensor_entity" "$package_count" sensor
+[[ "$reboot_required" == "true" ]] && reboot_state="on" || reboot_state="off"
+post_state "$reboot_entity" "$reboot_state" binary_sensor
+
+if [[ "$apt_status" != "ok" || "$package_count" -gt 0 || "$reboot_required" == "true" ]]; then
+  message="${host_name}: ${package_count} package update(s); reboot required: ${reboot_required}; APT refresh: ${apt_status}."
+  NOTIFICATION_ID="$notification_id" /usr/bin/python3 - "$message" <<'PY' | /usr/bin/curl --fail --silent --show-error --max-time 20 \
+    -H "Authorization: Bearer ${HOME_ASSISTANT_TOKEN}" \
+    -H 'Content-Type: application/json' \
+    --data-binary @- "${HOME_ASSISTANT_URL}/api/services/persistent_notification/create" >/dev/null
+import json
+import os
+import sys
+print(json.dumps({
+    "title": "Homelab updates need attention",
+    "message": sys.argv[1],
+    "notification_id": os.environ["NOTIFICATION_ID"],
+}))
+PY
+else
+  /usr/bin/curl --fail --silent --show-error --max-time 20 \
+    -H "Authorization: Bearer ${HOME_ASSISTANT_TOKEN}" \
+    -H 'Content-Type: application/json' \
+    --data '{"notification_id":"'"$notification_id"'"}' \
+    "${HOME_ASSISTANT_URL}/api/services/persistent_notification/dismiss" >/dev/null
+fi
