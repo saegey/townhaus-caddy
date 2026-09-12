@@ -64,6 +64,7 @@ AirPlay source → Shairport Sync → ALSA Loopback → CamillaDSP → USB DAC �
 │   ├── inventory.ini           # gitignored — copy from inventory.ini.example
 │   ├── requirements.yml        # ansible-galaxy collections
 │   ├── deploy.yml              # beelink Docker stack playbook
+│   ├── deploy-groovenet.yml    # GrooveNET stack playbook (tag-pinned GHCR images)
 │   ├── group_vars/
 │   │   ├── all/main.yml        # shared vars (versions, ports, MQTT)
 │   │   ├── aswitch.yml         # aswitch-specific vars
@@ -144,6 +145,10 @@ just deploy-pi-cam
 # Deploy all hosts
 just deploy
 
+# Deploy the GrooveNET stack at the pinned tag (see "GrooveNET stack" below)
+just deploy-groovenet
+just deploy-groovenet v0.1.5   # one-off tag override
+
 # Validate playbook syntax and the working diff
 just check
 ```
@@ -180,6 +185,43 @@ GROOVENET_DOCKER_NETWORK=dj-playlist_default \
 GROOVENET_UPSTREAM_HOST=webapp \
 docker compose up -d caddy
 ```
+
+## GrooveNET stack
+
+GrooveNET runs as its own Compose stack in `/srv/docker/groovenet`, separate
+from the Caddy stack above. The Caddy stack only *attaches* to GrooveNET's
+network (`dj-playlist_default`) to reverse-proxy `https://groovenet` to the
+`webapp` container — it does not manage GrooveNET's containers.
+
+`ansible/deploy-groovenet.yml` deploys pre-built GHCR images pinned to a
+release tag, so the box never needs a clone of the GrooveNET repo. On the
+control machine it shallow-clones
+[`Public-Vinyl-Radio/groovenet`](https://github.com/Public-Vinyl-Radio/groovenet)
+at the tag, renders `.env` from 1Password with the repo's own
+`scripts/render-env.sh`, copies the compose files + `.env` to the box, then runs
+the same ordered sequence as the repo's `deploy-prod.sh`: pull → start
+`db`/`redis` → wait for Postgres → run migrations → `up -d`.
+
+Pin the version in `ansible/group_vars/townhaus_caddy/groovenet.yml`:
+
+```yaml
+groovenet_image_tag: v0.1.4   # a published release tag
+```
+
+Then deploy:
+
+```bash
+just deploy-groovenet          # uses the pinned groovenet_image_tag
+just deploy-groovenet v0.1.5   # one-off override without editing group_vars
+```
+
+**Requirements:** on the control machine, `op` must be signed in (`op whoami`)
+and you need SSH access to the GrooveNET repo. All GrooveNET secrets live in the
+`Homelab` vault's `groovenet` item, referenced by the repo's `.env.tpl`.
+
+This is a drop-in replacement for running `just deploy vX.Y.Z` from the
+GrooveNET repo. It reuses the existing data volumes in place, so it's a
+mechanism swap, not a fresh install.
 
 ## Dotfiles
 
@@ -374,6 +416,19 @@ Frigate runs as a Docker service on beelink with `network_mode: host` (required 
 
 All credentials (MQTT password, camera RTSP URLs, HomeKit PIN) are stored in 1Password and rendered into the config at deploy time — no plaintext secrets in the repo.
 
+### Upgrade to Frigate 0.18.0
+
+`just deploy-beelink` performs the 0.18 upgrade. Before it pulls and starts the
+new pinned image, it detects a `0.17-0` runtime configuration, stops Frigate,
+and creates a consistent one-time backup at
+`/srv/storage/frigate-backups/v0.17-pre-v0.18`. This includes both `config.yml`
+and `frigate.db`.
+
+After the deploy, check the Frigate UI and logs with `just status` and
+`just logs frigate`. The config is updated for Frigate 0.18's FFmpeg 8/go2rtc
+VAAPI behavior. 0.18 also changes on-disk snapshots to clean WebP files; use
+the event snapshot API if another service requires annotated JPEG snapshots.
+
 ```bash
 # First-time setup
 cp ansible/group_vars/townhaus_caddy/frigate.yml.example ansible/group_vars/townhaus_caddy/frigate.yml
@@ -381,6 +436,23 @@ cp ansible/group_vars/townhaus_caddy/frigate.yml.example ansible/group_vars/town
 
 # Deploy config + start container
 just deploy-beelink
+```
+
+## Package update monitoring
+
+Each managed Linux host runs a weekly APT audit on Monday morning. It refreshes
+package metadata but never installs packages or restarts a host.
+It publishes `sensor.<host>_package_updates` and
+`binary_sensor.<host>_reboot_required` to Home Assistant, including the pending
+package names, running kernel, kernel metapackage version, and last check time.
+When updates, a reboot requirement, or an APT refresh failure are found, it
+updates a single Home Assistant persistent notification for that host.
+
+The reporting role uses the existing `HomeAssistantNotifier` long-lived token
+in 1Password. Trigger a check at any time with:
+
+```bash
+just check-updates
 ```
 
 ## Immich backups

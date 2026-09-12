@@ -1,0 +1,66 @@
+---
+- name: Configure package update reporting
+  when: package_update_report_enabled | bool
+  block:
+    - name: Resolve Home Assistant update-reporting token from 1Password
+      ansible.builtin.command:
+        argv: [op, read, "{{ package_update_report_ha_token_ref }}"]
+      delegate_to: localhost
+      vars:
+        ansible_python_interpreter: "{{ ansible_playbook_python }}"
+      register: package_update_report_token_result
+      changed_when: false
+      no_log: true
+
+    - name: Store Home Assistant update-reporting token
+      ansible.builtin.set_fact:
+        _package_update_report_ha_token: "{{ package_update_report_token_result.stdout | trim }}"
+      no_log: true
+
+    - name: Create package update-reporting configuration directory
+      ansible.builtin.file:
+        path: /etc/package-update-report
+        state: directory
+        owner: root
+        group: root
+        mode: "0700"
+      become: true
+
+    - name: Write package update-reporting environment
+      ansible.builtin.template:
+        src: environment.j2
+        dest: /etc/package-update-report/environment
+        owner: root
+        group: root
+        mode: "0600"
+      become: true
+      no_log: true
+
+    - name: Install package update-reporting script
+      ansible.builtin.template:
+        src: package-update-report.sh.j2
+        dest: /usr/local/sbin/package-update-report
+        owner: root
+        group: root
+        mode: "0750"
+      become: true
+
+    - name: Install package update-reporting systemd units
+      ansible.builtin.template:
+        src: "{{ item }}.j2"
+        dest: "/etc/systemd/system/{{ item }}"
+        owner: root
+        group: root
+        mode: "0644"
+      become: true
+      loop:
+        - package-update-report.service
+        - package-update-report.timer
+
+    - name: Enable weekly package update-reporting timer
+      ansible.builtin.systemd:
+        name: package-update-report.timer
+        enabled: true
+        state: started
+        daemon_reload: true
+      become: true

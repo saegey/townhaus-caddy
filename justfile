@@ -19,6 +19,7 @@ dependencies:
 # Validate every Ansible playbook without contacting a host.
 syntax-check:
     ansible-playbook --syntax-check -i ansible/inventory.ini.example ansible/deploy.yml
+    ansible-playbook --syntax-check -i ansible/inventory.ini.example ansible/deploy-groovenet.yml
     ansible-playbook --syntax-check -i ansible/inventory.ini.example ansible/playbooks/beelink.yml
     ansible-playbook --syntax-check -i ansible/inventory.ini.example ansible/playbooks/aswitch.yml
     ansible-playbook --syntax-check -i ansible/inventory.ini.example ansible/playbooks/pi_cam.yml
@@ -40,6 +41,10 @@ lint-fix:
 # Deploy the Docker Compose stack to beelink.
 deploy-stack:
     ansible-playbook ansible/deploy.yml --ask-become-pass
+
+# Deploy the GrooveNET stack to beelink at the pinned tag, or override: `just deploy-groovenet v0.1.5`.
+deploy-groovenet version="":
+    ansible-playbook ansible/deploy-groovenet.yml {{ if version == "" { "" } else { "-e groovenet_image_tag=" + version } }}
 
 # Apply beelink host roles, including backup timers and service configuration.
 configure-beelink:
@@ -100,6 +105,10 @@ status:
 # Follow a Docker Compose service's logs on beelink, e.g. `just logs immich-server`.
 logs service:
     ssh -t {{ beelink }} "cd {{ beelink_app_dir }} && docker compose logs -f --tail=100 {{ service }}"
+
+# Trigger the package-update audit now on every managed Linux host.
+check-updates:
+    ansible all -i ansible/inventory.ini --become --ask-become-pass -m ansible.builtin.systemd -a "name=package-update-report.service state=started"
 
 # Reload Caddy without restarting its container.
 caddy-reload:

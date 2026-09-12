@@ -37,4 +37,5 @@
     - role: camilladsp
     - role: aswitch_services
     - role: beszel_agent
+    - role: package_update_report
     - role: dotfiles

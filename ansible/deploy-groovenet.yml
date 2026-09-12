@@ -1,0 +1,187 @@
+---
+- name: Deploy the GrooveNET stack
+  hosts: townhaus_caddy
+  gather_facts: false
+  vars:
+    # Common `docker compose` prefix. IMAGE_TAG is supplied via `environment:`
+    # on each command so the pinned tag drives image selection.
+    groovenet_compose_base:
+      - docker
+      - compose
+      - --env-file
+      - .env
+      - -f
+      - docker-compose.yml
+      - -f
+      - docker-compose.prod.yml
+      - -p
+      - "{{ groovenet_project_name }}"
+
+  pre_tasks:
+    - name: Validate the requested image tag
+      ansible.builtin.assert:
+        that:
+          - groovenet_image_tag is defined
+          - groovenet_image_tag | length > 0
+          - groovenet_image_tag is match('^v[0-9]+\.[0-9]+\.[0-9]+$')
+        fail_msg: >-
+          Set groovenet_image_tag to a published release tag, e.g. v0.1.4
+          (in group_vars or with -e groovenet_image_tag=v0.1.5).
+
+    - name: Check 1Password CLI availability on the control machine
+      ansible.builtin.command:
+        argv: [op, --version]
+      delegate_to: localhost
+      vars:
+        ansible_python_interpreter: "{{ ansible_playbook_python }}"
+      changed_when: false
+
+  tasks:
+    - name: Create a temporary checkout directory on the control machine
+      ansible.builtin.tempfile:
+        state: directory
+        suffix: groovenet
+      delegate_to: localhost
+      vars:
+        ansible_python_interpreter: "{{ ansible_playbook_python }}"
+      register: groovenet_checkout
+      changed_when: false
+
+    - name: Fetch groovenet compose files and env template at the pinned tag
+      ansible.builtin.git:
+        repo: "{{ groovenet_repo }}"
+        dest: "{{ groovenet_checkout.path }}"
+        version: "{{ groovenet_image_tag }}"
+        depth: 1
+      delegate_to: localhost
+      vars:
+        ansible_python_interpreter: "{{ ansible_playbook_python }}"
+      changed_when: false
+
+    - name: Render the groovenet .env from 1Password on the control machine
+      ansible.builtin.command:
+        argv:
+          - bash
+          - scripts/render-env.sh
+          - .env.tpl
+          - "{{ groovenet_checkout.path }}/.env.rendered"
+      args:
+        chdir: "{{ groovenet_checkout.path }}"
+      delegate_to: localhost
+      vars:
+        ansible_python_interpreter: "{{ ansible_playbook_python }}"
+      changed_when: false
+      no_log: true
+
+    - name: Ensure the groovenet app directory exists
+      ansible.builtin.file:
+        path: "{{ groovenet_app_dir }}"
+        state: directory
+        owner: "{{ townhaus_caddy_owner }}"
+        group: "{{ townhaus_caddy_group }}"
+        mode: "0755"
+
+    - name: Copy the compose files
+      ansible.builtin.copy:
+        src: "{{ groovenet_checkout.path }}/{{ item }}"
+        dest: "{{ groovenet_app_dir }}/{{ item }}"
+        owner: "{{ townhaus_caddy_owner }}"
+        group: "{{ townhaus_caddy_group }}"
+        mode: "0644"
+      loop:
+        - docker-compose.yml
+        - docker-compose.prod.yml
+
+    - name: Install the rendered .env
+      ansible.builtin.copy:
+        src: "{{ groovenet_checkout.path }}/.env.rendered"
+        dest: "{{ groovenet_app_dir }}/.env"
+        owner: "{{ townhaus_caddy_owner }}"
+        group: "{{ townhaus_caddy_group }}"
+        mode: "0600"
+      no_log: true
+
+    - name: Ensure the shared groovenet network exists
+      ansible.builtin.command:
+        argv: [docker, network, create, "{{ groovenet_project_name }}_default"]
+      register: groovenet_network
+      changed_when: groovenet_network.rc == 0
+      failed_when:
+        - groovenet_network.rc != 0
+        - "'already exists' not in groovenet_network.stderr"
+
+    - name: Pull images for the pinned tag
+      ansible.builtin.command:
+        argv: "{{ groovenet_compose_base + ['pull'] + groovenet_pull_services }}"
+      args:
+        chdir: "{{ groovenet_app_dir }}"
+      environment:
+        IMAGE_TAG: "{{ groovenet_image_tag }}"
+      changed_when: true
+
+    - name: Start database dependencies
+      ansible.builtin.command:
+        argv: "{{ groovenet_compose_base + ['up', '-d', 'db', 'redis'] }}"
+      args:
+        chdir: "{{ groovenet_app_dir }}"
+      environment:
+        IMAGE_TAG: "{{ groovenet_image_tag }}"
+      changed_when: true
+
+    - name: Wait for PostgreSQL readiness
+      ansible.builtin.command:
+        argv: >-
+          {{ groovenet_compose_base +
+             ['exec', '-T', 'db', 'pg_isready',
+              '-U', groovenet_postgres_user, '-d', groovenet_postgres_db] }}
+      args:
+        chdir: "{{ groovenet_app_dir }}"
+      environment:
+        IMAGE_TAG: "{{ groovenet_image_tag }}"
+      register: groovenet_pg_ready
+      until: groovenet_pg_ready.rc == 0
+      retries: 30
+      delay: 4
+      changed_when: false
+
+    - name: Run database migrations
+      ansible.builtin.command:
+        argv: "{{ groovenet_compose_base + ['run', '--rm', '--use-aliases', 'migrate'] }}"
+      args:
+        chdir: "{{ groovenet_app_dir }}"
+      environment:
+        IMAGE_TAG: "{{ groovenet_image_tag }}"
+      changed_when: true
+
+    - name: Start the full stack
+      ansible.builtin.command:
+        argv: "{{ groovenet_compose_base + ['up', '-d', '--remove-orphans'] }}"
+      args:
+        chdir: "{{ groovenet_app_dir }}"
+      environment:
+        IMAGE_TAG: "{{ groovenet_image_tag }}"
+      changed_when: true
+
+    - name: Show compose status
+      ansible.builtin.command:
+        argv: "{{ groovenet_compose_base + ['ps'] }}"
+      args:
+        chdir: "{{ groovenet_app_dir }}"
+      environment:
+        IMAGE_TAG: "{{ groovenet_image_tag }}"
+      register: groovenet_ps
+      changed_when: false
+
+    - name: Print compose status
+      ansible.builtin.debug:
+        var: groovenet_ps.stdout_lines
+
+  post_tasks:
+    - name: Remove the control-machine checkout
+      ansible.builtin.file:
+        path: "{{ groovenet_checkout.path }}"
+        state: absent
+      delegate_to: localhost
+      vars:
+        ansible_python_interpreter: "{{ ansible_playbook_python }}"
+      changed_when: false

@@ -33,6 +33,7 @@
     - role: beszel_hub
     - role: adguard_dns
     - role: beszel_agent
+    - role: package_update_report
     - role: frigate
     - role: uptime_kuma
     - role: immich_backup

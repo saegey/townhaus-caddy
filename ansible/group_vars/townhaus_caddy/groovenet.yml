@@ -1,0 +1,32 @@
+---
+# GrooveNET stack deploy (managed separately from the townhaus-caddy compose
+# stack). Deploys pre-built GHCR images pinned to groovenet_image_tag into
+# groovenet_app_dir, mirroring the groovenet repo's scripts/deploy-prod.sh but
+# without requiring a full clone on the box.
+#
+# To deploy a release: bump groovenet_image_tag to a published tag and run
+#   just deploy-groovenet
+# or override for a one-off without editing this file:
+#   just deploy-groovenet v0.1.5
+
+groovenet_repo: git@github.com:Public-Vinyl-Radio/groovenet.git
+groovenet_image_tag: v0.1.4
+
+groovenet_app_dir: /srv/docker/groovenet
+
+# Compose project name — determines the shared network name (<project>_default).
+# Must stay "dj-playlist" so it matches GROOVENET_DOCKER_NETWORK
+# (dj-playlist_default) that the Caddy stack attaches to.
+groovenet_project_name: dj-playlist
+
+# Postgres identity used for the readiness probe (see groovenet .env.tpl).
+groovenet_postgres_user: djplaylist
+groovenet_postgres_db: djplaylist
+
+# Services to pull before starting (mirrors deploy-prod.sh).
+groovenet_pull_services:
+  - app
+  - migrate
+  - essentia
+  - ga-service
+  - download-worker
