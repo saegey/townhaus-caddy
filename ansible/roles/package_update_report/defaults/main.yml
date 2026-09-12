@@ -1,0 +1,9 @@
+---
+# A weekly, read-only APT audit published to Home Assistant. Package installation
+# and reboots remain manual.
+package_update_report_enabled: true
+# Reuse the HA LAN URL already configured for Uptime Kuma. This is resolved
+# through the inventory so Pi hosts do not need mDNS to resolve homeassistant.local.
+package_update_report_ha_url: "{{ hostvars[groups['townhaus_caddy'][0]].uptime_kuma_ha_url | default('http://homeassistant.local:8123', true) }}"
+package_update_report_ha_token_ref: op://Homelab/HomeAssistantNotifier/token
+package_update_report_schedule: "Mon *-*-* 05:30:00"
