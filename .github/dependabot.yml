@@ -1,0 +1,17 @@
+version: 2
+updates:
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+      - docker
+
+  - package-ecosystem: docker-compose
+    directory: /services/frigate
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+      - docker
