@@ -58,6 +58,20 @@
         ansible_python_interpreter: "{{ ansible_playbook_python }}"
       changed_when: false
 
+    - name: Make render-env.sh overwrite its tmp file non-interactively
+      # render-env.sh writes `op inject` output to a mktemp file, which op
+      # refuses to overwrite without confirmation in Ansible's non-interactive
+      # subprocess ("cannot prompt for confirmation"). Add --force. No-op once
+      # the flag is present upstream.
+      ansible.builtin.replace:
+        path: "{{ groovenet_checkout.path }}/scripts/render-env.sh"
+        regexp: "op inject -i"
+        replace: "op inject --force -i"
+      delegate_to: localhost
+      vars:
+        ansible_python_interpreter: "{{ ansible_playbook_python }}"
+      changed_when: false
+
     - name: Render the groovenet .env from 1Password on the control machine
       ansible.builtin.command:
         argv:
