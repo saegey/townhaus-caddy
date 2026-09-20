@@ -52,12 +52,11 @@ uptime_kuma_monitors:
   - name: Groovenet
     url: http://webapp:3000
   - name: Groovenet backup
-    # The JSON query requires the endpoint's own freshness assessment, not
-    # merely a successful HTTP response.
-    type: json-query
+    # A keyword monitor avoids Kuma v2's JSON-query condition API while still
+    # requiring the endpoint's own freshness assessment.
+    type: keyword
     url: http://webapp:3000/api/health/backup
-    json_path: healthy
-    expected_value: "true"
+    keyword: '"healthy":true'
     interval: 3600
   - name: Home Assistant
     url: http://192.168.1.x:8123
