@@ -47,23 +47,6 @@
   no_log: true
   when: uptime_kuma_ha_token_ref is defined
 
-- name: Ensure status page exists
-  lucasheld.uptime_kuma.status_page:
-    api_url: "{{ uptime_kuma_api_url }}"
-    api_username: "{{ uptime_kuma_user }}"
-    api_password: "{{ uptime_kuma_pass }}"
-    slug: "{{ uptime_kuma_status_page.slug }}"
-    title: "{{ uptime_kuma_status_page.title }}"
-    description: "{{ uptime_kuma_status_page.description | default('') }}"
-    theme: "{{ uptime_kuma_status_page.theme | default('auto') }}"
-    published: "{{ uptime_kuma_status_page.published | default(true) }}"
-    showPoweredBy: false
-    publicGroupList: "{{ uptime_kuma_status_page.groups }}"
-    state: present
-  delegate_to: localhost
-  no_log: true
-  when: uptime_kuma_status_page is defined
-
 - name: Remove retired monitors
   lucasheld.uptime_kuma.monitor:
     api_url: "{{ uptime_kuma_api_url }}"
@@ -94,3 +77,22 @@
   loop_control:
     label: "{{ item.name }}"
   no_log: true
+
+- name: Ensure status page exists
+  # Resolve monitor names only after the monitor reconciliation above. This
+  # lets a status page refer to a monitor introduced in the same playbook run.
+  lucasheld.uptime_kuma.status_page:
+    api_url: "{{ uptime_kuma_api_url }}"
+    api_username: "{{ uptime_kuma_user }}"
+    api_password: "{{ uptime_kuma_pass }}"
+    slug: "{{ uptime_kuma_status_page.slug }}"
+    title: "{{ uptime_kuma_status_page.title }}"
+    description: "{{ uptime_kuma_status_page.description | default('') }}"
+    theme: "{{ uptime_kuma_status_page.theme | default('auto') }}"
+    published: "{{ uptime_kuma_status_page.published | default(true) }}"
+    showPoweredBy: false
+    publicGroupList: "{{ uptime_kuma_status_page.groups }}"
+    state: present
+  delegate_to: localhost
+  no_log: true
+  when: uptime_kuma_status_page is defined
