@@ -10,7 +10,10 @@
 #   just deploy-groovenet v0.1.5
 
 groovenet_repo: git@github.com:Public-Vinyl-Radio/groovenet.git
-groovenet_image_tag: v0.1.4
+# The source for Compose files and .env.tpl. This is intentionally independent
+# of groovenet_image_tag: published GHCR image tags need not be Git tags.
+groovenet_source_ref: main
+groovenet_image_tag: v0.1.11
 
 groovenet_app_dir: /srv/docker/groovenet
 
