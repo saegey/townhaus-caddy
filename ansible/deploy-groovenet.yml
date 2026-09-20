@@ -47,11 +47,13 @@
       register: groovenet_checkout
       changed_when: false
 
-    - name: Fetch groovenet compose files and env template at the pinned tag
+    - name: Fetch groovenet compose files and env template
       ansible.builtin.git:
         repo: "{{ groovenet_repo }}"
         dest: "{{ groovenet_checkout.path }}"
-        version: "{{ groovenet_image_tag }}"
+        # A GHCR image tag is not necessarily a Git ref. Keep the image pinned
+        # independently and obtain deployment templates from this source ref.
+        version: "{{ groovenet_source_ref }}"
         depth: 1
       delegate_to: localhost
       vars:
