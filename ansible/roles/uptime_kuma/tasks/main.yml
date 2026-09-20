@@ -86,6 +86,8 @@
     type: "{{ item.type | default('http') }}"
     url: "{{ item.url }}"
     interval: "{{ item.interval | default(60) }}"
+    jsonPath: "{{ item.json_path | default(omit) }}"
+    expectedValue: "{{ item.expected_value | default(omit) }}"
     state: present
   delegate_to: localhost
   loop: "{{ uptime_kuma_monitors }}"
