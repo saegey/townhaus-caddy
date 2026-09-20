@@ -192,6 +192,57 @@
         mode: "0600"
       no_log: true
 
+    # Frigate 0.18 performs a one-way database/config migration on first start.
+    # Preserve a consistent v0.17 snapshot before Docker pulls and starts 0.18.
+    - name: Inspect Frigate runtime configuration before 0.18 upgrade
+      ansible.builtin.slurp:
+        src: /srv/storage/frigate-config/config.yml
+      register: townhaus_caddy_frigate_config
+      failed_when: false
+      no_log: true
+
+    - name: Check for Frigate 0.18 pre-upgrade backup
+      ansible.builtin.stat:
+        path: /srv/storage/frigate-backups/v0.17-pre-v0.18
+      register: townhaus_caddy_frigate_upgrade_backup
+      become: true
+
+    - name: Back up Frigate 0.17 data before upgrading to 0.18
+      when:
+        - townhaus_caddy_frigate_config is succeeded
+        - townhaus_caddy_frigate_config.content | b64decode is search('version:\\s*0\\.17-0')
+        - not townhaus_caddy_frigate_upgrade_backup.stat.exists
+      block:
+        - name: Ensure Frigate backup directory exists
+          ansible.builtin.file:
+            path: /srv/storage/frigate-backups
+            state: directory
+            owner: root
+            group: root
+            mode: "0700"
+          become: true
+
+        - name: Stop Frigate for a consistent pre-upgrade backup
+          ansible.builtin.command:
+            argv: [docker, stop, frigate]
+          become: true
+          register: townhaus_caddy_frigate_stop
+          changed_when: townhaus_caddy_frigate_stop.rc == 0
+          failed_when: >-
+            townhaus_caddy_frigate_stop.rc != 0 and
+            'No such container' not in townhaus_caddy_frigate_stop.stderr and
+            'is not running' not in townhaus_caddy_frigate_stop.stderr
+
+        - name: Copy Frigate configuration and database backup
+          ansible.builtin.command:
+            argv:
+              - cp
+              - -a
+              - /srv/storage/frigate-config
+              - /srv/storage/frigate-backups/v0.17-pre-v0.18
+          become: true
+          changed_when: true
+
     - name: Inspect existing Uptime Kuma container
       ansible.builtin.command:
         argv: [docker, inspect, uptime_kuma]
