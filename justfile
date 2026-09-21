@@ -22,6 +22,7 @@ syntax-check:
     ansible-playbook --syntax-check -i ansible/inventory.ini.example ansible/deploy-groovenet.yml
     ansible-playbook --syntax-check -i ansible/inventory.ini.example ansible/playbooks/beelink.yml
     ansible-playbook --syntax-check -i ansible/inventory.ini.example ansible/playbooks/aswitch.yml
+    ansible-playbook --syntax-check -i ansible/inventory.ini.example ansible/playbooks/aswitch_airplay.yml
     ansible-playbook --syntax-check -i ansible/inventory.ini.example ansible/playbooks/aswitch_ingest.yml
     ansible-playbook --syntax-check -i ansible/inventory.ini.example ansible/playbooks/pi_cam.yml
 
@@ -63,6 +64,10 @@ deploy-aswitch:
 # Quickly refresh aswitch's Groovenet ingest client, Caddy CA trust, and route.
 deploy-aswitch-ingest:
     ansible-playbook ansible/playbooks/aswitch_ingest.yml --ask-become-pass
+
+# Quickly apply Shairport routing changes without running the full Pi playbook.
+deploy-aswitch-airplay:
+    ansible-playbook ansible/playbooks/aswitch_airplay.yml --ask-become-pass
 
 # Fast deploy for the IR logger service on aswitch.
 deploy-ir:

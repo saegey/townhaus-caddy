@@ -76,6 +76,8 @@ CamillaDSP is deliberately disabled only on `aswitch.local` via
 `camilladsp_enabled: false`. Its role, binaries, presets, and configuration are
 preserved. Shairport's dependency is also removed while it is disabled. Set
 that value to `true` and deploy the aswitch playbook to restore and start it.
+While disabled, Shairport bypasses the loopback and sends AirPlay directly to
+the SMSL DAC.
 
 ## Repository layout
 

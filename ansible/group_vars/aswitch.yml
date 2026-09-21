@@ -100,7 +100,9 @@ aswitch_env_extra:
   PREAMP_LED_AVAILABILITY_TOPIC: aswitch/preamp/led/availability
 
 shairport_name: aswitch
-shairport_alsa_output: "hw:Loopback,0,0"
+# CamillaDSP consumes the loopback only when enabled. Otherwise Shairport must
+# send AirPlay directly to the SMSL DAC.
+shairport_alsa_output: "{{ 'hw:Loopback,0,0' if (camilladsp_enabled | bool) else 'plughw:CARD=AUDIO,DEV=0' }}"
 shairport_mqtt_topic: aswitch/shairport
 shairport_mqtt_publish_parsed: "yes"
 shairport_mqtt_publish_cover: "yes"
