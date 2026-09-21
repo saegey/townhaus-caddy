@@ -7,7 +7,14 @@ aswitch_services_source_files:
   - "{{ playbook_dir }}/../../services/aswitch/preamp_ir_codes.py"
   - "{{ playbook_dir }}/../../services/aswitch/preamp_trigger.py"
   - "{{ playbook_dir }}/../../services/aswitch/preamp_led.py"
+  - "{{ playbook_dir }}/../../services/aswitch/groovenet_ingest.py"
 
 aswitch_services_disabled_services: []
+aswitch_services_static_hosts: []
+aswitch_services_caddy_ca_enabled: false
+aswitch_services_caddy_ca_host: "{{ groups['townhaus_caddy'] | first }}"
+aswitch_services_caddy_ca_container: caddy
+aswitch_services_caddy_ca_path: /data/caddy/pki/authorities/local/root.crt
+aswitch_services_caddy_ca_dest: /usr/local/share/ca-certificates/caddy-local.crt
 aswitch_services_pigpio_src_dir: /usr/local/src/pigpio
 aswitch_services_pigpio_git_ref: master

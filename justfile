@@ -22,6 +22,7 @@ syntax-check:
     ansible-playbook --syntax-check -i ansible/inventory.ini.example ansible/deploy-groovenet.yml
     ansible-playbook --syntax-check -i ansible/inventory.ini.example ansible/playbooks/beelink.yml
     ansible-playbook --syntax-check -i ansible/inventory.ini.example ansible/playbooks/aswitch.yml
+    ansible-playbook --syntax-check -i ansible/inventory.ini.example ansible/playbooks/aswitch_ingest.yml
     ansible-playbook --syntax-check -i ansible/inventory.ini.example ansible/playbooks/pi_cam.yml
 
 # Run repository validation checks.
@@ -58,6 +59,10 @@ deploy-beelink:
 # Deploy all services to aswitch.
 deploy-aswitch:
     ansible-playbook ansible/playbooks/aswitch.yml --ask-become-pass
+
+# Quickly refresh aswitch's Groovenet ingest client, Caddy CA trust, and route.
+deploy-aswitch-ingest:
+    ansible-playbook ansible/playbooks/aswitch_ingest.yml --ask-become-pass
 
 # Fast deploy for the IR logger service on aswitch.
 deploy-ir:

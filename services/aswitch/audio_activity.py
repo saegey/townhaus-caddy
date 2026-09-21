@@ -15,6 +15,8 @@ import numpy as np
 import paho.mqtt.client as mqtt
 import sounddevice as sd
 
+from groovenet_ingest import GroovenetIngest
+
 AUDIO_DEVICE = os.environ.get("AUDIO_DEVICE", "plughw:CARD=CODEC,DEV=0")
 MQTT_HOST = os.environ.get("MQTT_HOST", "homeassistant.local")
 MQTT_PORT = 1883
@@ -23,6 +25,13 @@ MQTT_USERNAME = os.environ.get("MQTT_USER")
 MQTT_PASSWORD = os.environ.get("MQTT_PASS")
 RECORDINGS_DIR = Path(os.environ.get("RECORDINGS_DIR", "./recordings"))
 RECORDING_ATTENUATION_DB = float(os.environ.get("RECORDING_ATTENUATION_DB", "0.0"))
+GROOVENET_INGEST_ENABLED = os.environ.get("GROOVENET_INGEST_ENABLED", "false").lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
+GROOVENET_SAMPLE_RATE = int(os.environ.get("GROOVENET_SAMPLE_RATE", "44100"))
 
 AUDIO_ACTIVITY_STATE_TOPIC = "aswitch/audio_activity/state"
 AUDIO_ACTIVITY_RMS_TOPIC = "aswitch/audio_activity/rms"
@@ -203,6 +212,7 @@ class AudioActivityMonitor:
         self.sample_rate = None
         self.recording_writer = None
         self.capture_thread = None
+        self.groovenet_ingest = None
 
     def _build_mqtt_client(self):
         client = mqtt.Client(
@@ -302,6 +312,8 @@ class AudioActivityMonitor:
 
         if self.recording_writer is not None:
             self.recording_writer.enqueue_audio(pcm_bytes)
+        if self.groovenet_ingest is not None:
+            self.groovenet_ingest.write(indata)
 
     def capture_loop(self, stream):
         while not self.stop_event.is_set():
@@ -454,7 +466,11 @@ class AudioActivityMonitor:
             self.logger.error("Audio input device '%s' is unavailable: %s", AUDIO_DEVICE, exc)
             raise SystemExit(1) from exc
 
-        self.sample_rate = int(device_info["default_samplerate"]) or 44100
+        self.sample_rate = (
+            GROOVENET_SAMPLE_RATE
+            if GROOVENET_INGEST_ENABLED
+            else int(device_info["default_samplerate"]) or 44100
+        )
         max_input_channels = int(device_info["max_input_channels"])
         if max_input_channels < CHANNELS:
             self.logger.error(
@@ -481,9 +497,20 @@ class AudioActivityMonitor:
         )
         self.recording_writer.start()
 
+    def start_groovenet_ingest(self):
+        if not GROOVENET_INGEST_ENABLED:
+            return
+        self.groovenet_ingest = GroovenetIngest(
+            sample_rate=self.sample_rate,
+            channels=CHANNELS,
+            logger=logging.getLogger("groovenet_ingest"),
+        )
+        self.groovenet_ingest.start()
+
     def run(self):
         sample_rate = self.resolve_input_settings()
         self.start_recording_writer()
+        self.start_groovenet_ingest()
 
         self.client.connect_async(MQTT_HOST, MQTT_PORT, MQTT_KEEPALIVE)
         self.client.loop_start()
@@ -528,6 +555,8 @@ class AudioActivityMonitor:
             if self.recording_writer is not None:
                 self.recording_writer.set_recording(False)
                 self.recording_writer.stop()
+            if self.groovenet_ingest is not None:
+                self.groovenet_ingest.stop()
             self.client.publish(RECORDING_STATE_TOPIC, "off", retain=True)
             self.client.disconnect()
             self.client.loop_stop()

@@ -33,6 +33,41 @@
     state: directory
     mode: "0755"
 
+- name: Add static host entries needed by aswitch services
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: "^[^#]*\\s{{ item.name | regex_escape }}(?:\\s|$)"
+    line: "{{ item.address }} {{ item.name }}"
+    state: present
+  loop: "{{ aswitch_services_static_hosts }}"
+  become: true
+
+- name: Read Caddy internal root certificate
+  ansible.builtin.command:
+    argv:
+      - docker
+      - exec
+      - "{{ aswitch_services_caddy_ca_container }}"
+      - cat
+      - "{{ aswitch_services_caddy_ca_path }}"
+  delegate_to: "{{ aswitch_services_caddy_ca_host }}"
+  register: aswitch_services_caddy_ca
+  changed_when: false
+  become: true
+  when: aswitch_services_caddy_ca_enabled | bool
+
+- name: Install Caddy internal root certificate
+  ansible.builtin.copy:
+    content: "{{ aswitch_services_caddy_ca.stdout }}\n"
+    dest: "{{ aswitch_services_caddy_ca_dest }}"
+    mode: "0644"
+  register: aswitch_services_caddy_ca_installed
+  become: true
+  notify:
+    - Update Caddy System Certificate Trust Store
+    - Restart Aswitch Services
+  when: aswitch_services_caddy_ca_enabled | bool
+
 - name: Ensure pigpio build dependencies are installed
   ansible.builtin.apt:
     name:
