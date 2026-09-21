@@ -46,6 +46,7 @@ class GroovenetIngest:
         self.wave_file = None
         self.partial_path = None
         self.final_path = None
+        self.write_lock = threading.Lock()
         self.stop_event = threading.Event()
         self.uploader = threading.Thread(
             target=self._upload_loop, name="groovenet-uploader", daemon=True
@@ -64,23 +65,32 @@ class GroovenetIngest:
 
     def write(self, audio_frames):
         """Accept an int16 frame array, downmix it, and finalize exact windows."""
-        mono_frames = self._downmix(audio_frames)
-        position = 0
-        while position < len(mono_frames):
-            if self.wave_file is None:
-                self._open_chunk()
-            remaining = self.frames_per_chunk - self.frames_written
-            part = mono_frames[position : position + remaining]
-            self.wave_file.writeframes(part.tobytes())
-            frame_count = len(part)
-            self.frames_written += frame_count
-            position += frame_count
-            if self.frames_written == self.frames_per_chunk:
-                self._finalize_chunk()
+        with self.write_lock:
+            mono_frames = self._downmix(audio_frames)
+            position = 0
+            while position < len(mono_frames):
+                if self.wave_file is None:
+                    self._open_chunk()
+                remaining = self.frames_per_chunk - self.frames_written
+                part = mono_frames[position : position + remaining]
+                self.wave_file.writeframes(part.tobytes())
+                frame_count = len(part)
+                self.frames_written += frame_count
+                position += frame_count
+                if self.frames_written == self.frames_per_chunk:
+                    self._finalize_chunk()
+
+    def pause(self):
+        """Discard an incomplete window before an intentional capture gap."""
+        with self.write_lock:
+            if self.wave_file is not None:
+                self.logger.info("Discarding incomplete Groovenet chunk after audio became inactive")
+                self._discard_partial_chunk()
 
     def stop(self):
         self.stop_event.set()
-        self._discard_partial_chunk()
+        with self.write_lock:
+            self._discard_partial_chunk()
         self.uploader.join(timeout=5)
 
     def _downmix(self, audio_frames):

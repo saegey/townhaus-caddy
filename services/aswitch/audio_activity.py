@@ -32,6 +32,9 @@ GROOVENET_INGEST_ENABLED = os.environ.get("GROOVENET_INGEST_ENABLED", "false").l
     "on",
 }
 GROOVENET_SAMPLE_RATE = int(os.environ.get("GROOVENET_SAMPLE_RATE", "44100"))
+GROOVENET_INGEST_ONLY_WHEN_ACTIVE = os.environ.get(
+    "GROOVENET_INGEST_ONLY_WHEN_ACTIVE", "false"
+).lower() in {"1", "true", "yes", "on"}
 
 AUDIO_ACTIVITY_STATE_TOPIC = "aswitch/audio_activity/state"
 AUDIO_ACTIVITY_RMS_TOPIC = "aswitch/audio_activity/rms"
@@ -41,8 +44,10 @@ RECORDING_FILE_TOPIC = "aswitch/audio_recording/file"
 RECORDING_ERROR_TOPIC = "aswitch/audio_recording/error"
 
 RMS_THRESHOLD = 0.01
-ACTIVE_HOLD_SECONDS = 2.0
-INACTIVE_HOLD_SECONDS = 300.0
+ACTIVE_HOLD_SECONDS = float(os.environ.get("AUDIO_ACTIVITY_ACTIVE_HOLD_SECONDS", "2.0"))
+INACTIVE_HOLD_SECONDS = float(
+    os.environ.get("AUDIO_ACTIVITY_INACTIVE_HOLD_SECONDS", "300.0")
+)
 PUBLISH_RMS_DEBUG = True
 STATUS_LOG_INTERVAL_SECONDS = 30.0
 RMS_PUBLISH_INTERVAL_SECONDS = 1.0
@@ -312,7 +317,9 @@ class AudioActivityMonitor:
 
         if self.recording_writer is not None:
             self.recording_writer.enqueue_audio(pcm_bytes)
-        if self.groovenet_ingest is not None:
+        if self.groovenet_ingest is not None and (
+            not GROOVENET_INGEST_ONLY_WHEN_ACTIVE or self.is_active
+        ):
             self.groovenet_ingest.write(indata)
 
     def capture_loop(self, stream):
@@ -359,6 +366,12 @@ class AudioActivityMonitor:
                 RMS_THRESHOLD,
             )
             self.publish_activity_state()
+            if (
+                self.groovenet_ingest is not None
+                and GROOVENET_INGEST_ONLY_WHEN_ACTIVE
+                and not next_state
+            ):
+                self.groovenet_ingest.pause()
         elif now - self.last_status_log_at >= STATUS_LOG_INTERVAL_SECONDS:
             self.last_status_log_at = now
             self.logger.info(

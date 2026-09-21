@@ -57,13 +57,15 @@ AirPlay source → Shairport Sync → ALSA Loopback → CamillaDSP → USB DAC �
 
 ## Vinyl capture to Groovenet
 
-`audio_activity.service` also captures the turntable chain and uploads
-contiguous 15-second mono, 16-bit WAV windows to Groovenet. Completed chunks
-are atomically added to `~/aswitch/groovenet-spool`; a background worker posts
-them in order and retries network and 5xx failures with exponential backoff.
-The filename carries the window start, session UUID, and sequence number, so a
-restart or outage can resume safely using Groovenet's idempotency key. Accepted
-and permanently rejected (4xx) chunks are deleted.
+`audio_activity.service` captures the turntable chain and uploads contiguous
+15-second mono, 16-bit WAV windows to Groovenet only while its RMS detector
+reports active audio. It begins after two seconds of signal and stops after 30
+seconds of inactivity; incomplete windows are discarded at that intentional
+boundary. Completed chunks are atomically added to `~/aswitch/groovenet-spool`;
+a background worker posts them in order and retries network and 5xx failures
+with exponential backoff. The filename carries the window start, session UUID,
+and sequence number, so a restart or outage can resume safely using Groovenet's
+idempotency key. Accepted and permanently rejected (4xx) chunks are deleted.
 
 The settings live in `ansible/group_vars/aswitch.yml`. The capture device is
 the existing `AUDIO_DEVICE` (currently the USB Audio CODEC) and capture is
