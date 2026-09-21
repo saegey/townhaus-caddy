@@ -61,5 +61,19 @@
         - "{{ playbook_dir }}/../../services/aswitch/groovenet_ingest.py"
       notify: Restart Groovenet ingest service
 
+    - name: Configure activity-gated Groovenet ingest
+      ansible.builtin.lineinfile:
+        path: "{{ aswitch_app_dir }}/.env"
+        regexp: "^{{ item.key }}="
+        line: "{{ item.key }}={{ item.value }}"
+        state: present
+      loop:
+        - key: GROOVENET_INGEST_ONLY_WHEN_ACTIVE
+          value: "{{ aswitch_env_extra.GROOVENET_INGEST_ONLY_WHEN_ACTIVE }}"
+        - key: AUDIO_ACTIVITY_INACTIVE_HOLD_SECONDS
+          value: "{{ aswitch_env_extra.AUDIO_ACTIVITY_INACTIVE_HOLD_SECONDS }}"
+      no_log: true
+      notify: Restart Groovenet ingest service
+
     - name: Apply Groovenet ingest updates
       ansible.builtin.meta: flush_handlers
