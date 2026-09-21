@@ -77,7 +77,9 @@ CamillaDSP is deliberately disabled only on `aswitch.local` via
 preserved. Shairport's dependency is also removed while it is disabled. Set
 that value to `true` and deploy the aswitch playbook to restore and start it.
 While disabled, Shairport bypasses the loopback and sends AirPlay directly to
-the SMSL DAC.
+the SMSL DAC. The SMSL has fixed output, so Shairport uses a -12 dB maximum
+software level on aswitch to match the mixer; adjust `shairport_volume_max_db`
+in small increments if the source levels still differ.
 
 ## Repository layout
 

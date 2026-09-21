@@ -4,9 +4,7 @@ general = {
   name = "{{ shairport_name }}";
   interpolation = "soxr";
   output_backend = "{{ shairport_output_backend }}";
-  // The ZD3 volume will be driven externally from MQTT metadata, so Shairport
-  // should publish the requested AirPlay volume without attenuating the PCM
-  // stream on its way into CamillaDSP.
+  // Use the configured software or hardware mixer policy for AirPlay volume.
   ignore_volume_control = "{{ shairport_ignore_volume_control }}";
 {% if shairport_volume_max_db is defined %}
   volume_max_db = {{ shairport_volume_max_db }};
