@@ -1,0 +1,7 @@
+---
+- name: Configure Uptime Kuma monitors
+  hosts: townhaus_caddy
+  gather_facts: false
+
+  roles:
+    - role: uptime_kuma

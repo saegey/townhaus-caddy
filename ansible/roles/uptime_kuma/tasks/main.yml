@@ -84,7 +84,8 @@
     api_password: "{{ uptime_kuma_pass }}"
     name: "{{ item.name }}"
     type: "{{ item.type | default('http') }}"
-    url: "{{ item.url }}"
+    url: "{{ item.url | default(omit) }}"
+    hostname: "{{ item.hostname | default(omit) }}"
     interval: "{{ item.interval | default(60) }}"
     state: present
   delegate_to: localhost
