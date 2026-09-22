@@ -5,6 +5,12 @@
     virtualenv: "{{ aswitch_app_dir }}/.venv"
     virtualenv_command: python3 -m venv
 
+- name: Update Caddy System Certificate Trust Store
+  ansible.builtin.command:
+    argv: [update-ca-certificates]
+  changed_when: false
+  become: true
+
 - name: Restart Aswitch Services
   ansible.builtin.systemd:
     name: "{{ item.name }}.service"

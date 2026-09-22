@@ -1,0 +1,7 @@
+---
+- name: Quickly deploy Shairport routing to aswitch.local
+  hosts: aswitch
+  gather_facts: false
+
+  roles:
+    - role: shairport

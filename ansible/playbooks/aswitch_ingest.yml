@@ -1,0 +1,79 @@
+---
+- name: Quickly deploy the Groovenet ingest client to aswitch.local
+  hosts: aswitch
+  gather_facts: false
+
+  vars:
+    groovenet_caddy_host: "{{ groups['townhaus_caddy'] | first }}"
+    groovenet_caddy_ca_path: /data/caddy/pki/authorities/local/root.crt
+    groovenet_caddy_ca_dest: /usr/local/share/ca-certificates/caddy-local.crt
+    groovenet_caddy_ip: 192.168.2.151
+    groovenet_caddy_hostname: groovenet.home.arpa
+
+  handlers:
+    - name: Update Caddy system certificate trust store
+      ansible.builtin.command:
+        argv: [update-ca-certificates]
+      changed_when: false
+      become: true
+
+    - name: Restart Groovenet ingest service
+      ansible.builtin.systemd:
+        name: audio_activity.service
+        state: restarted
+      become: true
+
+  tasks:
+    - name: Route Groovenet through the Caddy host
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        regexp: "^[^#]*\\s{{ groovenet_caddy_hostname | regex_escape }}(?:\\s|$)"
+        line: "{{ groovenet_caddy_ip }} {{ groovenet_caddy_hostname }}"
+        state: present
+      become: true
+
+    - name: Read Caddy internal root certificate
+      ansible.builtin.command:
+        argv: [docker, exec, caddy, cat, "{{ groovenet_caddy_ca_path }}"]
+      delegate_to: "{{ groovenet_caddy_host }}"
+      register: groovenet_caddy_ca
+      changed_when: false
+      become: true
+
+    - name: Install Caddy internal root certificate
+      ansible.builtin.copy:
+        content: "{{ groovenet_caddy_ca.stdout }}\n"
+        dest: "{{ groovenet_caddy_ca_dest }}"
+        mode: "0644"
+      register: groovenet_caddy_ca_installed
+      become: true
+      notify:
+        - Update Caddy system certificate trust store
+        - Restart Groovenet ingest service
+
+    - name: Sync the Groovenet ingest source
+      ansible.builtin.copy:
+        src: "{{ item }}"
+        dest: "{{ aswitch_app_dir }}/{{ item | basename }}"
+        mode: "0644"
+      loop:
+        - "{{ playbook_dir }}/../../services/aswitch/audio_activity.py"
+        - "{{ playbook_dir }}/../../services/aswitch/groovenet_ingest.py"
+      notify: Restart Groovenet ingest service
+
+    - name: Configure activity-gated Groovenet ingest
+      ansible.builtin.lineinfile:
+        path: "{{ aswitch_app_dir }}/.env"
+        regexp: "^{{ item.key }}="
+        line: "{{ item.key }}={{ item.value }}"
+        state: present
+      loop:
+        - key: GROOVENET_INGEST_ONLY_WHEN_ACTIVE
+          value: "{{ aswitch_env_extra.GROOVENET_INGEST_ONLY_WHEN_ACTIVE }}"
+        - key: AUDIO_ACTIVITY_INACTIVE_HOLD_SECONDS
+          value: "{{ aswitch_env_extra.AUDIO_ACTIVITY_INACTIVE_HOLD_SECONDS }}"
+      no_log: true
+      notify: Restart Groovenet ingest service
+
+    - name: Apply Groovenet ingest updates
+      ansible.builtin.meta: flush_handlers

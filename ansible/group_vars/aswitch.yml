@@ -35,8 +35,23 @@ aswitch_services:
   - name: preamp_led
     script: preamp_led.py
 
+# Leave the CamillaDSP installation and presets intact, but do not run it on
+# aswitch. Set this to true and deploy to restore the services.
+camilladsp_enabled: false
+
 aswitch_services_disabled_services:
   - aswitch
+
+# aswitch uses the router for DNS, which does not resolve AdGuard's local
+# rewrites. Keep the Groovenet hostname for Caddy's TLS certificate while
+# routing it directly to the Caddy host.
+aswitch_services_static_hosts:
+  - address: 192.168.2.151
+    name: groovenet.home.arpa
+
+# Trust Caddy's internal CA so the Groovenet uploader can verify its HTTPS
+# certificate while using the static mapping above.
+aswitch_services_caddy_ca_enabled: true
 
 # 1Password secret references – resolved at deploy time with `op read`.
 # Create these items in 1Password before running the playbook.
@@ -47,6 +62,15 @@ aswitch_env_extra:
   AUDIO_DEVICE: "plughw:CARD=CODEC,DEV=0"
   RECORDINGS_DIR: "{{ ansible_env.HOME }}/aswitch/recordings"
   RECORDING_ATTENUATION_DB: "-6.0"
+  # Requires Groovenet v0.2.2 or later, which provides /api/audio/ingest.
+  GROOVENET_INGEST_ENABLED: "true"
+  GROOVENET_INGEST_URL: "https://groovenet.home.arpa/api/audio/ingest"
+  GROOVENET_SOURCE_ID: aswitch
+  GROOVENET_CHUNK_SECONDS: "15"
+  GROOVENET_SAMPLE_RATE: "44100"
+  GROOVENET_SPOOL_DIR: "{{ ansible_env.HOME }}/aswitch/groovenet-spool"
+  GROOVENET_INGEST_ONLY_WHEN_ACTIVE: "true"
+  AUDIO_ACTIVITY_INACTIVE_HOLD_SECONDS: "30"
   IR_GPIO: "17"
   IR_TX_GPIO: "18"
   IR_FRAME_GAP_US: "15000"
@@ -76,10 +100,21 @@ aswitch_env_extra:
   PREAMP_LED_AVAILABILITY_TOPIC: aswitch/preamp/led/availability
 
 shairport_name: aswitch
-shairport_alsa_output: "hw:Loopback,0,0"
+# CamillaDSP consumes the loopback only when enabled. Otherwise Shairport must
+# send AirPlay directly to the SMSL DAC.
+shairport_alsa_output: "{{ 'hw:Loopback,0,0' if (camilladsp_enabled | bool) else 'plughw:CARD=AUDIO,DEV=0' }}"
 shairport_mqtt_topic: aswitch/shairport
 shairport_mqtt_publish_parsed: "yes"
 shairport_mqtt_publish_cover: "yes"
+# The SMSL has fixed output. Keep the preamp as the master volume and cap
+# AirPlay at a level that matches the mixer when the source is at full volume.
+shairport_ignore_volume_control: "no"
+shairport_volume_max_db: -12.0
+# Keep Shairport from starting CamillaDSP as a systemd dependency while the
+# latter is disabled. The normal dependency returns when camilladsp_enabled is
+# set to true.
+shairport_systemd_after: "{{ ['network-online.target', 'camilladsp.service'] if (camilladsp_enabled | bool) else ['network-online.target'] }}"
+shairport_systemd_wants: "{{ ['camilladsp.service'] if (camilladsp_enabled | bool) else [] }}"
 
 camilladsp_capture_device: "hw:Loopback,1"
 camilladsp_playback_device: "plughw:CARD=AUDIO,DEV=0"

@@ -9,7 +9,7 @@ Raspberry Pi MQTT relay controller and audio monitoring suite. Independent Pytho
 | File | Systemd unit | Purpose |
 |---|---|---|
 | `aswitch.py` | `aswitch.service` | GPIO relay switch — routes audio source (DAC vs mixer) and controls a trigger output via MQTT commands |
-| `audio_activity.py` | `audio_activity.service` | USB audio RMS detector — publishes active/inactive state, debug RMS values, and optionally records WAV files |
+| `audio_activity.py` | `audio_activity.service` | USB audio RMS detector — publishes activity and, when active, sends 15-second vinyl windows to Groovenet |
 | `ir_logger.py` | `ir_logger.service` | VS1838B IR receiver + blaster — publishes received raw frames and sends learned preamp commands via MQTT |
 | `preamp_trigger.py` | `preamp_trigger.service` | HY-M154 optocoupler monitor — publishes the preamp's physical 12V trigger state |
 | `preamp_led.py` | `preamp_led.service` | TCS34725 monitor — publishes preamp LED color, input state, and raw RGB readings |
@@ -33,6 +33,15 @@ Raspberry Pi MQTT relay controller and audio monitoring suite. Independent Pytho
 **Logging** — Use `logging` throughout; never `print()`. The root logger is configured in `main()` via `logging.basicConfig`. Pass format args to the logger call (`logger.info("x=%s", x)`) rather than f-strings, so the string is only rendered when the message is actually emitted.
 
 **Threading in `audio_activity.py`** — `RecordingWriter` is a daemon `Thread`. Shared mutable state (`recording_enabled`, `current_wave`, `current_path`, `dropped_blocks`, `last_error`) is protected by `self.state_lock`. Anything you read or write from outside the `RecordingWriter` thread must hold that lock.
+
+**Groovenet ingest** — `audio_activity.py` feeds the same capture stream to
+`groovenet_ingest.py`, so do not create a second process that opens the USB
+audio device. It writes completed windows atomically to `GROOVENET_SPOOL_DIR`.
+The filename is the durable ingest metadata: timestamp, session UUID, and
+sequence. Preserve it when changing the uploader; those fields form the
+server's idempotency key. On aswitch it is gated by the RMS activity state;
+discard a partial window when entering an intentional inactive period rather
+than joining audio from separate playback sessions.
 
 **`logger.exception()`** — automatically appends the current exception's traceback and message. Do not pass the caught exception as a format argument — `logger.exception("Failed")` is correct; `logger.exception("Failed: %s", exc)` is redundant.
 
