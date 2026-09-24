@@ -25,6 +25,7 @@ syntax-check:
     ansible-playbook --syntax-check -i ansible/inventory.ini.example ansible/playbooks/aswitch_airplay.yml
     ansible-playbook --syntax-check -i ansible/inventory.ini.example ansible/playbooks/aswitch_ingest.yml
     ansible-playbook --syntax-check -i ansible/inventory.ini.example ansible/playbooks/pi_cam.yml
+    ansible-playbook --syntax-check -i ansible/inventory.ini.example ansible/playbooks/uptime_kuma.yml
 
 # Run repository validation checks.
 check:
@@ -51,6 +52,10 @@ deploy-groovenet version="":
 # Apply beelink host roles, including backup timers and service configuration.
 configure-beelink:
     ansible-playbook ansible/playbooks/beelink.yml --ask-become-pass
+
+# Apply only the Uptime Kuma monitor and status-page configuration.
+configure-uptime-kuma:
+    ansible-playbook ansible/playbooks/uptime_kuma.yml
 
 # Deploy and configure the complete beelink stack.
 deploy-beelink:
