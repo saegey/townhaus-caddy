@@ -145,7 +145,7 @@ services:
         max-file: "3"
 
   immich-server:
-    image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-v2.7.5}
+    image: ghcr.io/immich-app/immich-server:v3.1.0
     container_name: immich_server
     restart: unless-stopped
     env_file:
@@ -175,7 +175,7 @@ services:
         max-file: "3"
 
   immich-machine-learning:
-    image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION:-v2.7.5}
+    image: ghcr.io/immich-app/immich-machine-learning:v3.1.0
     container_name: immich_machine_learning
     restart: unless-stopped
     env_file:
