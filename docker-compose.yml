@@ -1,7 +1,7 @@
 ---
 services:
   caddy:
-    image: caddy:2.10-alpine
+    image: caddy:2.10.2-alpine@sha256:4c6e91c6ed0e2fa03efd5b44747b625fec79bc9cd06ac5235a779726618e530d
     container_name: caddy
     restart: unless-stopped
     environment:
@@ -34,7 +34,7 @@ services:
         max-file: "3"
 
   adguardhome:
-    image: adguard/adguardhome:latest
+    image: adguard/adguardhome:v0.107.79@sha256:aba9e3bf0613be3ba3755e1fc311b126e2c24bec25e18b6483894a88283074f0
     container_name: adguardhome
     restart: unless-stopped
     env_file:
@@ -54,7 +54,7 @@ services:
         max-file: "3"
 
   beszel-hub:
-    image: henrygd/beszel:latest
+    image: henrygd/beszel:0.20.0@sha256:897e807a065adf8e89e30ae0cd79d1f5e38fe84ccaffbc418bde9d3cdca4eacc
     container_name: beszel_hub
     restart: unless-stopped
     ports:
@@ -68,8 +68,7 @@ services:
         max-file: "3"
 
   uptime-kuma:
-    # Track the supported Uptime Kuma v2 release line.
-    image: louislam/uptime-kuma:2
+    image: louislam/uptime-kuma:2.5.5@sha256:c74379ac4509ce2d2c2633f509e67003ee2e45b6e995c5e43fc101f45a0e1fbe
     container_name: uptime_kuma
     restart: unless-stopped
     ports:
@@ -86,7 +85,7 @@ services:
         max-file: "3"
 
   loki:
-    image: grafana/loki:3.7.7
+    image: grafana/loki:3.7.7@sha256:d70e4659623f3e109af669cae76fe2a5dd5be54e2298fe8aed380d982fbc2500
     container_name: loki
     restart: unless-stopped
     ports:
@@ -102,7 +101,7 @@ services:
         max-file: "3"
 
   grafana:
-    image: grafana/grafana:13.2.2
+    image: grafana/grafana:13.2.2@sha256:ac461fb352abc50da10a51c7d02462e9c05488f11f53f14b3ad79a8145f638a0
     container_name: grafana
     restart: unless-stopped
     environment:
@@ -121,7 +120,7 @@ services:
         max-file: "3"
 
   frigate:
-    image: ghcr.io/blakeblackshear/frigate:0.18.0
+    image: ghcr.io/blakeblackshear/frigate:0.18.0@sha256:9678a83a76e4730ac7d9ea7428370e32ae656d6b312aaad30d6c69f3fef14d35
     container_name: frigate
     restart: unless-stopped
     privileged: true
@@ -145,7 +144,7 @@ services:
         max-file: "3"
 
   immich-server:
-    image: ghcr.io/immich-app/immich-server:v3.1.0
+    image: ghcr.io/immich-app/immich-server:v3.1.0@sha256:b434cb9287eea1471c9974845914d4dd328c9c2d652e446ed4930f99944f0ceb
     container_name: immich_server
     restart: unless-stopped
     env_file:
@@ -175,7 +174,7 @@ services:
         max-file: "3"
 
   immich-machine-learning:
-    image: ghcr.io/immich-app/immich-machine-learning:v3.1.0
+    image: ghcr.io/immich-app/immich-machine-learning:v3.1.0@sha256:5a0839dc5303cd7215bcd2180a26aed3af41675aefb3e75e5157e9f10ad16e6e
     container_name: immich_machine_learning
     restart: unless-stopped
     env_file:
@@ -191,7 +190,7 @@ services:
         max-file: "3"
 
   immich-redis:
-    image: docker.io/valkey/valkey:9@sha256:c123e3715db63d06d4ad6964884037aa0d5d4d703939b9929954112889708e1d
+    image: docker.io/valkey/valkey:9.1.2@sha256:c123e3715db63d06d4ad6964884037aa0d5d4d703939b9929954112889708e1d
     container_name: immich_redis
     restart: unless-stopped
     healthcheck:

@@ -585,6 +585,28 @@ before pulling and starting v2. Copy this archive off the Beelink before the
 upgrade if it is needed for disaster recovery; it is a local rollback backup,
 not an off-site backup.
 
+## Container image updates
+
+Dependabot checks the root Compose file and the standalone Frigate Compose
+file weekly. Every production image is pinned as `release@sha256:digest`: the
+release keeps Dependabot updates readable, while the digest ensures a deploy
+always pulls the reviewed artifact. Do not use `latest`, a major-only tag, or a
+tag without a digest in a production Compose file.
+
+Review image release notes and backup or migration requirements before merging
+an update, especially for Immich and Frigate. Deploy an approved update with:
+
+```bash
+just deploy-beelink
+```
+
+If an image update must be rolled back, revert the commit that changed its
+image reference (or restore its exact prior `release@sha256:digest` value),
+then redeploy. The prior digest is immutable, so this restores the exact
+previous artifact rather than whatever its old tag now points to. Consult the
+service's migration and backup notes before rolling back any application that
+has changed on-disk data.
+
 ## Beszel monitoring
 
 Beszel Hub runs as a Docker container on beelink (`https://beszel`). Agents run on all three hosts. The Hub's SSH public key is automatically distributed to each agent via the Ansible playbooks — no manual key copying needed.
