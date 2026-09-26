@@ -35,7 +35,7 @@ Homelab monorepo managing a Caddy reverse proxy stack, Frigate NVR, Raspberry Pi
 |---|---|
 | `aswitch.service` | GPIO relay — routes audio source via MQTT |
 | `audio_activity.service` | USB audio RMS detector — publishes active/inactive state |
-| `groovenet_ingest` (within `audio_activity.service`) | Continuous 15-second vinyl capture and Groovenet upload |
+| `groovenet_ingest` (within `audio_activity.service`) | Activity-gated 15-second vinyl capture and Groovenet upload |
 | `camilladsp.service` / `camillagui.service` | Installed but disabled; can be restored with `camilladsp_enabled: true` |
 | `shairport-sync.service` | AirPlay receiver |
 
@@ -49,10 +49,11 @@ Homelab monorepo managing a Caddy reverse proxy stack, Frigate NVR, Raspberry Pi
 | `camillagui.service` | CamillaGUI web UI (`https://pi-cam`) |
 | `shairport-sync.service` | AirPlay receiver → ALSA Loopback → CamillaDSP |
 
-### Audio signal chain (both Pis)
+### Audio signal chains
 
 ```
-AirPlay source → Shairport Sync → ALSA Loopback → CamillaDSP → USB DAC → speakers
+aswitch: AirPlay → Shairport Sync → UCA202 → TOSLINK → externally powered SMSL SU-1 → preamp
+pi-cam:  AirPlay → Shairport Sync → ALSA Loopback → CamillaDSP → USB DAC → speakers
 ```
 
 ## Vinyl capture to Groovenet
@@ -76,10 +77,11 @@ CamillaDSP is deliberately disabled only on `aswitch.local` via
 `camilladsp_enabled: false`. Its role, binaries, presets, and configuration are
 preserved. Shairport's dependency is also removed while it is disabled. Set
 that value to `true` and deploy the aswitch playbook to restore and start it.
-While disabled, Shairport bypasses the loopback and sends AirPlay directly to
-the SMSL DAC. The SMSL has fixed output, so Shairport uses a -12 dB maximum
-software level on aswitch to match the mixer; adjust `shairport_volume_max_db`
-in small increments if the source levels still differ.
+While disabled, Shairport bypasses the loopback and sends AirPlay through the
+UCA202's TOSLINK output to the externally powered SMSL SU-1. The SMSL has fixed
+output, so Shairport uses a -12 dB maximum software level on aswitch to match
+the mixer; adjust `shairport_volume_max_db` in small increments if the source
+levels still differ.
 
 ## Repository layout
 
@@ -99,6 +101,8 @@ in small increments if the source levels still differ.
 │   ├── playbooks/
 │   │   ├── beelink.yml         # AdGuard DNS + Beszel agent + Frigate config
 │   │   ├── aswitch.yml         # all aswitch services
+│   │   ├── aswitch_airplay.yml # focused aswitch Shairport deployment
+│   │   ├── aswitch_ingest.yml  # focused aswitch ingest deployment
 │   │   └── pi_cam.yml          # all pi-cam services
 │   └── roles/
 │       ├── aswitch_services/   # Python services + venv + env from 1Password
@@ -121,7 +125,8 @@ in small increments if the source levels still differ.
 │       ├── docker-compose.yml  # standalone compose (superseded by root compose)
 │       └── config/             # config template reference
 ├── Caddyfile
-└── docker-compose.yml
+├── docker-compose.yml
+└── docs/                       # operator runbooks
 ```
 
 ## Prerequisites
@@ -173,7 +178,7 @@ just deploy
 
 # Deploy the GrooveNET stack at the pinned tag (see "GrooveNET stack" below)
 just deploy-groovenet
-just deploy-groovenet v0.1.5   # one-off tag override
+just deploy-groovenet vX.Y.Z   # one-off tag override
 
 # Validate playbook syntax and the working diff
 just check
@@ -196,6 +201,14 @@ automatic fixes with `just lint-fix`.
 
 The lower-level `just deploy-stack` and `just configure-beelink` recipes are
 available when only the Compose stack or host roles need to change.
+
+## Operator runbooks
+
+- [aswitch audio and power](docs/aswitch.md) — signal path, focused deploys,
+  logs, and power diagnostics.
+- [GrooveNET](docs/groovenet.md) — pinned image deployments and vinyl ingest
+  verification.
+- [Operations](docs/operations.md) — Uptime Kuma, backups, and Dependabot.
 
 For Beelink, deploy the Caddy stack through Ansible. The playbook renders the
 remote `.env` from `ansible/group_vars/townhaus_caddy/main.yml` and should
@@ -231,7 +244,7 @@ the same ordered sequence as the repo's `deploy-prod.sh`: pull → start
 Pin the version in `ansible/group_vars/townhaus_caddy/groovenet.yml`:
 
 ```yaml
-groovenet_image_tag: v0.1.4   # a published GHCR image tag
+groovenet_image_tag: vX.Y.Z   # a published GHCR image tag
 # Optional: use a specific Git ref for the Compose files and .env.tpl.
 groovenet_source_ref: main
 ```
@@ -240,7 +253,7 @@ Then deploy:
 
 ```bash
 just deploy-groovenet          # uses the pinned groovenet_image_tag
-just deploy-groovenet v0.1.5   # one-off override without editing group_vars
+just deploy-groovenet vX.Y.Z   # one-off override without editing group_vars
 ```
 
 **Requirements:** on the control machine, `op` must be signed in (`op whoami`)
@@ -285,7 +298,10 @@ directly and installs the Debian-side prerequisites itself.
 
 ## CamillaDSP presets
 
-Seven EQ presets are managed in `ansible/roles/camilladsp/templates/configs/` and deployed to both Pis. The ALSA capture/playback devices are set per-host in `group_vars`:
+Seven EQ presets are managed in `ansible/roles/camilladsp/templates/configs/`.
+They are active on pi-cam; the aswitch configuration is preserved but CamillaDSP
+is currently disabled there. The ALSA capture/playback devices are set per-host
+in `group_vars`:
 
 | Preset | Description |
 |---|---|
@@ -297,7 +313,8 @@ Seven EQ presets are managed in `ansible/roles/camilladsp/templates/configs/` an
 | `relaxed.yml` | Slight presence cut |
 | `warm.yml` | Bass lift, treble cut |
 
-Switch presets via the CamillaGUI web UI (`https://aswitch` or `https://pi-cam`).
+Switch pi-cam presets via the CamillaGUI web UI (`https://pi-cam`). To restore
+CamillaDSP on aswitch, set `camilladsp_enabled: true` and deploy aswitch.
 
 ## Pi-cam audio streamer
 
