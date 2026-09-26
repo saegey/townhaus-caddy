@@ -100,9 +100,13 @@ aswitch_env_extra:
   PREAMP_LED_AVAILABILITY_TOPIC: aswitch/preamp/led/availability
 
 shairport_name: aswitch
-# CamillaDSP consumes the loopback only when enabled. Otherwise Shairport must
-# send AirPlay directly to the SMSL DAC.
-shairport_alsa_output: "{{ 'hw:Loopback,0,0' if (camilladsp_enabled | bool) else 'plughw:CARD=AUDIO,DEV=0' }}"
+# CamillaDSP consumes the loopback only when enabled. Otherwise Shairport sends
+# AirPlay to the UCA202, which forwards it digitally over TOSLINK to the SMSL.
+shairport_alsa_output: "{{ 'hw:Loopback,0,0' if (camilladsp_enabled | bool) else 'plughw:CARD=CODEC,DEV=0' }}"
+# The UCA202's digital output supports 16-bit 44.1/48 kHz. Pin AirPlay to its
+# native rate and a universally supported sample format.
+shairport_alsa_output_rate: 44100
+shairport_alsa_output_format: S16_LE
 shairport_mqtt_topic: aswitch/shairport
 shairport_mqtt_publish_parsed: "yes"
 shairport_mqtt_publish_cover: "yes"
