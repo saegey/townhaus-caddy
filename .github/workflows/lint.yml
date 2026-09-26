@@ -28,6 +28,9 @@ on:
       - "Justfile"
       - ".github/workflows/lint.yml"
 
+permissions:
+  contents: read
+
 jobs:
   ansible-lint:
     runs-on: ubuntu-latest
