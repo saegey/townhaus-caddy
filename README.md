@@ -219,11 +219,11 @@ from the Caddy stack above. The Caddy stack only *attaches* to GrooveNET's
 network (`dj-playlist_default`) to reverse-proxy `https://groovenet` to the
 `webapp` container — it does not manage GrooveNET's containers.
 
-`ansible/deploy-groovenet.yml` deploys pre-built GHCR images pinned to a
-release tag, so the box never needs a clone of the GrooveNET repo. On the
-control machine it shallow-clones
-[`Public-Vinyl-Radio/groovenet`](https://github.com/Public-Vinyl-Radio/groovenet)
-at the tag, renders `.env` from 1Password with the repo's own
+`ansible/deploy-groovenet.yml` deploys pre-built GHCR images pinned to an image
+tag, so the box never needs a clone of the GrooveNET repo. On the control
+machine it shallow-clones the configured source ref (by default `main`) of
+[`Public-Vinyl-Radio/groovenet`](https://github.com/Public-Vinyl-Radio/groovenet),
+renders `.env` from 1Password with the repo's own
 `scripts/render-env.sh`, copies the compose files + `.env` to the box, then runs
 the same ordered sequence as the repo's `deploy-prod.sh`: pull → start
 `db`/`redis` → wait for Postgres → run migrations → `up -d`.
@@ -231,7 +231,9 @@ the same ordered sequence as the repo's `deploy-prod.sh`: pull → start
 Pin the version in `ansible/group_vars/townhaus_caddy/groovenet.yml`:
 
 ```yaml
-groovenet_image_tag: v0.1.4   # a published release tag
+groovenet_image_tag: v0.1.4   # a published GHCR image tag
+# Optional: use a specific Git ref for the Compose files and .env.tpl.
+groovenet_source_ref: main
 ```
 
 Then deploy:

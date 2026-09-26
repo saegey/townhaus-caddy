@@ -21,6 +21,7 @@ uptime_kuma_status_page:
         - name: Beszel
         - name: Frigate
         - name: Groovenet
+        - name: Groovenet backup
         - name: Home Assistant
     - name: Audio
       weight: 2
@@ -50,6 +51,13 @@ uptime_kuma_monitors:
     url: http://192.168.2.151:5000
   - name: Groovenet
     url: http://webapp:3000
+  - name: Groovenet backup
+    # A keyword monitor avoids Kuma v2's JSON-query condition API while still
+    # requiring the endpoint's own freshness assessment.
+    type: keyword
+    url: http://webapp:3000/api/health/backup
+    keyword: '"healthy":true'
+    interval: 3600
   - name: Home Assistant
     url: http://192.168.1.x:8123
   - name: aswitch
