@@ -1,18 +1,35 @@
-name: Lint
+name: Validate infrastructure
 
 on:
   push:
     paths:
       - "ansible/**"
+      - "docker-compose.yml"
+      - "Caddyfile"
+      - "services/**"
+      - "README.md"
+      - "docs/**"
+      - "scripts/check-markdown-links.py"
+      - ".github/fixtures/**"
       - ".pre-commit-config.yaml"
       - "Justfile"
       - ".github/workflows/lint.yml"
   pull_request:
     paths:
       - "ansible/**"
+      - "docker-compose.yml"
+      - "Caddyfile"
+      - "services/**"
+      - "README.md"
+      - "docs/**"
+      - "scripts/check-markdown-links.py"
+      - ".github/fixtures/**"
       - ".pre-commit-config.yaml"
       - "Justfile"
       - ".github/workflows/lint.yml"
+
+permissions:
+  contents: read
 
 jobs:
   ansible-lint:
@@ -32,3 +49,38 @@ jobs:
 
       - name: Run ansible-lint
         run: ansible-lint ansible/
+
+      - name: Run Ansible syntax checks
+        run: |
+          ansible-playbook --syntax-check -i ansible/inventory.ini.example ansible/deploy.yml
+          ansible-playbook --syntax-check -i ansible/inventory.ini.example ansible/deploy-groovenet.yml
+          ansible-playbook --syntax-check -i ansible/inventory.ini.example ansible/playbooks/beelink.yml
+          ansible-playbook --syntax-check -i ansible/inventory.ini.example ansible/playbooks/aswitch.yml
+          ansible-playbook --syntax-check -i ansible/inventory.ini.example ansible/playbooks/aswitch_airplay.yml
+          ansible-playbook --syntax-check -i ansible/inventory.ini.example ansible/playbooks/aswitch_ingest.yml
+          ansible-playbook --syntax-check -i ansible/inventory.ini.example ansible/playbooks/pi_cam.yml
+          ansible-playbook --syntax-check -i ansible/inventory.ini.example ansible/playbooks/uptime_kuma.yml
+
+  configuration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Stage sanitized Compose environment files
+        run: |
+          cp .github/fixtures/compose.env .env
+          cp .github/fixtures/compose.env services/frigate/.env
+
+      - name: Render Compose configuration
+        run: |
+          docker compose -f docker-compose.yml config --quiet
+          docker compose -f services/frigate/docker-compose.yml config --quiet
+
+      - name: Validate Caddy configuration
+        run: |
+          caddy_image="$(docker compose -f docker-compose.yml config --format json | jq -r '.services.caddy.image')"
+          docker run --rm --volume "$GITHUB_WORKSPACE/Caddyfile:/etc/caddy/Caddyfile:ro" "$caddy_image" \
+            caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+
+      - name: Check local Markdown links
+        run: python3 scripts/check-markdown-links.py README.md docs services
